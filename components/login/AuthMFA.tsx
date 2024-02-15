@@ -7,7 +7,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { set } from "react-hook-form";
 import { FaLock } from "react-icons/fa";
-
+import DOMPurify from "dompurify";
+import axios from "axios";
 type Props = {
 	setVerified: (verified: boolean) => void;
 	setShowMFA: (showMFA: boolean) => void;
@@ -21,77 +22,41 @@ function AuthMFA({ mfaEnabled, setVerified, setShowMFA }: Props) {
 	const [loading, setLoading] = useState(false);
 	const user = useAppSelector((state: RootState) => state.user);
 
-	const verifyMFA = async () => {
-		const factors = await supabase.auth.mfa.listFactors();
-		if (factors.error) {
-			throw new Error(factors.error.message);
-		}
-
-		const totpFactor = factors.data.totp[0];
-
-		if (!totpFactor) {
-			throw new Error("No TOTP factors found!");
-		}
-
-		const factorId = totpFactor.id;
-
-		const challenge = await supabase.auth.mfa.challenge({ factorId });
-		if (challenge.error) {
-			setError(challenge.error.message);
-			throw new Error(challenge.error.message);
-		}
-
-		const challengeId = challenge.data.id;
-
-		const verify = await supabase.auth.mfa.verify({
-			factorId,
-			challengeId,
-			code: verifyCode,
-		});
-		if (verify.error) {
-			setError(verify.error.message);
-
-			return;
-		} else {
-			const { data, error } = await supabase
-				.from("users")
-				.update({
-					mfa_verified: true,
-					mfa_verified_at: new Date().toISOString(),
-				})
-				.eq("id", user.id);
-			if (error) {
-				console.log("Error updating user:", error.message);
-			}
-			dispatch(
-				setUser({
-					...user,
-					mfaVerified: true,
-				})
-			);
-			setShowMFA(false);
-			setVerified(true);
-		}
-	};
 	const onSubmitClicked = () => {
 		setLoading(true);
 		setError("");
-		verifyMFA()
-			.then(() => setLoading(false))
-			.catch((err) => {
-				setError(err.message);
-				setLoading(false);
+		const sanitizedCode = DOMPurify.sanitize(verifyCode);
+		axios
+			.post("/api/mfa/verify", { verifyCode: sanitizedCode, userId: user.id })
+			.then((res) => {
+				console.log("res.data >>> ", res.data);
+				if (res.data.error) {
+					setError(res.data.error);
+					setLoading(false);
+				}
+				if (!res.data.error) {
+					dispatch(
+						setUser({
+							...user,
+							mfaVerified: true,
+						})
+					);
+					setShowMFA(false);
+					setVerified(true);
+					setLoading(false);
+				}
 			});
 	};
 	useEffect(() => {
-		if (verifyCode.length === 6) {
+		const sanitizedCode = DOMPurify.sanitize(verifyCode);
+		if (sanitizedCode.length === 6) {
 			onSubmitClicked();
 			setDisabled(false);
 		}
-		if (verifyCode.length > 6) {
-			setVerifyCode(verifyCode.slice(0, 6));
+		if (sanitizedCode.length > 6) {
+			setVerifyCode(sanitizedCode.slice(0, 6));
 		}
-		if (verifyCode.length < 6) {
+		if (sanitizedCode.length < 6) {
 			setVerified(false);
 			setDisabled(true);
 		}
@@ -102,35 +67,49 @@ function AuthMFA({ mfaEnabled, setVerified, setShowMFA }: Props) {
 	const router = useRouter();
 	const handleLogoutClick = async () => {
 		// Handle logout logic here
-		await supabase.auth.signOut();
-		dispatch(
-			setUser({
-				roles: [],
-				loggedIn: false,
-				id: null,
-				activeRole: null,
-				currentTheme: null,
-				email: null,
-				name: null,
-				phoneNumber: null,
-				isVerified: false,
-				totalUserTreeCount: 0,
-				userTreeCount: 0,
-				onboardingComplete: false,
-				investorOnboardingComplete: false,
-				producerOnboardingComplete: false,
-				emailNotification: false,
-				smsNotification: false,
-				pushNotification: false,
-				loadingUser: false,
+
+		axios
+			.post("/api/logout", {
+				options: {
+					setMFAFalse: true,
+				},
+				userId: user.id,
 			})
-		);
-		await supabase
-			.from("users")
-			.update({
-				mfa_verified: false,
+			.then((res) => {
+				console.log("res.data >>> ", res.data);
+				dispatch(
+					setUser({
+						roles: [""],
+						loggedIn: false,
+						id: "",
+						producerId: "",
+						investorId: "",
+						activeRole: "",
+						currentTheme: "dark",
+						email: "",
+						name: "",
+						phoneNumber: "",
+						isVerified: false,
+						totalUserTreeCount: 0,
+						userTreeCount: 0,
+						onboardingComplete: false,
+						investorOnboardingComplete: false,
+						producerOnboardingComplete: false,
+						emailNotification: false,
+						smsNotification: false,
+						pushNotification: false,
+						mfaEnabled: false,
+						mfaVerified: false,
+						mfaVerifiedAt: "",
+						mfaFrequency: "",
+						loadingUser: true,
+					})
+				);
 			})
-			.eq("id", user.id);
+			.catch((err) => {
+				console.log("err >>> ", err);
+			});
+
 		setShowMFA(false);
 		router.push("/login");
 	};

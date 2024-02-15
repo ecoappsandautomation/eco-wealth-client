@@ -2,6 +2,7 @@
 import { setUser } from "@/redux/features/userSlice";
 import { useAppDispatch } from "@/redux/hooks";
 import { supabaseClient as supabase } from "@/utils/supabaseClient";
+import axios from "axios";
 import React, { ReactHTMLElement, useState } from "react";
 import { toast } from "react-toastify";
 
@@ -19,30 +20,28 @@ export default function Notifications({ user }: Props) {
 	// Here we have a function called setNotificationSettings that updates the user's notification settings in the supabase database
 	const setNotificationSettings = async () => {
 		setLoading(true);
-		const { data, error } = await supabase
-			.from("users")
-			.update({
-				email_notification: email,
-				sms_notification: sms,
-				push_notification: app,
+
+		await axios
+			.post("/api/settings/notifications", { email, sms, app, userId: user.id })
+			.then((res) => {
+				console.log(res.data);
+				// Here we update redux with the new user details
+				dispatch(
+					setUser({
+						...user,
+						emailNotification: email,
+						smsNotification: sms,
+						pushNotification: app,
+					})
+				);
+				toast.success("Notification settings updated successfully");
+				setLoading(false);
 			})
-			.eq("id", user.id);
-		if (error) {
-			console.log(error.message);
-			toast.error(`Could not update notification settings: ${error.message}`);
-			return;
-		}
-		// Here we update redux with the new user details
-		dispatch(
-			setUser({
-				...user,
-				emailNotification: email,
-				smsNotification: sms,
-				pushNotification: app,
-			})
-		);
-		toast.success("Notification settings updated successfully");
-		setLoading(false);
+			.catch((err) => {
+				toast.error(`Could not update notification settings: ${err.message}`);
+				console.log(err);
+				setLoading(false);
+			});
 	};
 
 	const handleToggleChange = (setter: any) => (event: any) => {

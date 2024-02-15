@@ -45,6 +45,7 @@ interface UserState {
 	isVerified: boolean;
 	mfaEnabled: boolean;
 	mfaVerified: boolean;
+	mfaFrequency: string;
 	loadingUser: boolean | null;
 
 	// User Roles
@@ -169,7 +170,8 @@ interface Project {
 	// project details
 	title: string;
 	description: string;
-	imageUrl: string;
+	bannerUrl: string;
+	imageUrls: string[];
 	status: string;
 	type: string;
 	isNonProfit: boolean;
@@ -243,9 +245,11 @@ interface ProjectFinancials {
 	numOfSharesSold: number;
 	estRoiAmount: number;
 	estRoiPercentage: number;
+	estLongTermRoiPercentage: number;
 	roiAnalysis: string;
 	estReturnPerShareUntilRepayment: number;
 	estReturnPerShareAfterRepayment: number;
+	estRevenue: number;
 }
 
 interface ProjectMilestone {
@@ -316,13 +320,13 @@ interface TreeProject extends Project {
 	treeTarget: number;
 	treeCount: number;
 	fundsRequestedPerTree: number;
-	treeProjectType: string;
+	projectType: string;
 	treeType: string;
 	estSeedCost: number;
 	estLabourCost: number;
-	estMaintenanceCost: number;
-	estPlantingDate: string;
-	estMaturityDate: string;
+	estMaintenanceCostPerYear: number;
+	estPlantingDate: string | EpochTimeStamp;
+	estMaturityDate: string | EpochTimeStamp;
 	amountOfProduceGeneratedInKgToDate: number;
 	avgRevenuePerItem: number;
 

@@ -150,18 +150,17 @@ export default function Milestones({ project, adminMode }: Props) {
 	};
 
 	const deleteMilestone = async (milestoneId: string) => {
-		const { data, error } = await supabase
-			.from("project_milestones")
-			.update({ is_deleted: true })
-			.eq("id", milestoneId);
-		if (error) {
-			console.error("Error deleting milestone:", error);
-			toast.error(error.message);
-		}
-		if (data) {
-			toast.success("Milestone deleted!");
-			return data[0];
-		}
+		axios
+			.delete(`/api/milestones/delete/${milestoneId}`)
+			.then((res) => {
+				if (res.data) {
+					toast.success("Milestone deleted!");
+					return res.data[0];
+				}
+			})
+			.catch((err) => {
+				console.log(`Failed to delete milestone: ${err}`);
+			});
 	};
 	const handleDeleteMilestone = (milestoneId: string) => {
 		// Replace deleteMilestone with your function name.
@@ -325,7 +324,7 @@ export default function Milestones({ project, adminMode }: Props) {
 						</div>
 					);
 				})}
-			{milestones.length === 0 && <p>No milestones found.</p>}
+			{milestones?.length === 0 && <p>No milestones found.</p>}
 		</div>
 	);
 }

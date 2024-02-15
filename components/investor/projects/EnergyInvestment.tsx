@@ -11,9 +11,10 @@ import InvestmentLeft from "./InvestmentLeft";
 import Loading from "@/components/Loading";
 type Props = {
 	project: Project;
+	sharesRemaining: number;
 };
 
-export default function EnergyInvestment({ project }: Props) {
+export default function EnergyInvestment({ project, sharesRemaining }: Props) {
 	const {
 		title,
 		description,
@@ -34,17 +35,16 @@ export default function EnergyInvestment({ project }: Props) {
 		setAmountPerShare(projectFinancials.amountPerShare);
 	}, [project, projectFinancials]);
 
-	// TODO: get number of shares acquired by all investors and subtract from total number of shares to get
-	// remaining # of shares that can be acquired.
+	// Handle maximum number of shares available to be purchased
 	useEffect(() => {
 		if (!project) return;
-		if (project && numberOfShares > projectFinancials.numOfShares) {
-			setNumberOfShares(projectFinancials.numOfShares);
+		if (project && numberOfShares > sharesRemaining) {
+			setNumberOfShares(sharesRemaining);
 			toast.info(
-				`Note: The maximum number of trees you can invest in for this project is ${projectFinancials.numOfShares}`
+				`Note: You can only invest in a maximum of ${sharesRemaining} shares for this project.`
 			);
 		}
-	}, [numberOfShares, energyProjects, project, projectFinancials]);
+	}, [numberOfShares, energyProjects, project, sharesRemaining]);
 
 	const calculateROI = (returnPerShare: number) => {
 		const amount = numberOfShares * returnPerShare;
@@ -90,7 +90,7 @@ export default function EnergyInvestment({ project }: Props) {
 		case 1:
 			if (!energyProjects) return <Loading />;
 			return (
-				<div className='flex mx-auto lg:w-[60%]'>
+				<div className='flex flex-col xl:flex-row mx-auto xl:w-[60%]'>
 					<InvestmentLeft
 						title={title}
 						description={description}

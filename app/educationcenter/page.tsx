@@ -53,8 +53,6 @@ const EducationCenter = () => {
 			const filteredCards = (response as EduCard[]).filter(
 				(card) => card.role === activeRole || card.role === "all"
 			);
-			console.log("response >>> ", response);
-			console.log("filteredCards >>> ", filteredCards);
 			setCards(filteredCards);
 		}
 	};
@@ -88,18 +86,15 @@ const EducationCenter = () => {
 
 	const handleCategoryClick = (category: string) => {
 		if (category === selectedCategory) {
-			console.log("setting category >>> ");
 			setSelectedCategory("");
 		} else {
-			console.log("setting category >>> ", category);
-
 			setSelectedCategory(category);
 		}
 	};
 
 	return (
 		<div className='flex md:flex-row flex-col'>
-			<div className='custom-scrollbar flex md:flex-col p-2 md:p-4 lg:w-[14%] bg-[var(--bg-one)] overflow-x-scroll md:overflow-x-hidden md:overflow-y-scroll md:h-screen'>
+			<div className='custom-scrollbar flex md:flex-col p-2 md:p-4 xl:w-[14%] bg-[var(--bg-one)] overflow-x-scroll md:overflow-x-hidden md:overflow-y-scroll md:h-screen'>
 				{categoryLinks.map(
 					({ category, isVisible, role }) =>
 						((isVisible && role === activeRole) ||

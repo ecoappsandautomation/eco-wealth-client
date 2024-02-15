@@ -12,6 +12,8 @@ import Image from "next/image";
 import axios from "axios";
 import getBasePath from "@/lib/getBasePath";
 import Loading from "@/components/Loading";
+import moment from "moment";
+import ImageUpload from "@/components/ImageUpload";
 interface FormValues {
 	title: string;
 	image: File | null;
@@ -21,17 +23,18 @@ interface FormValues {
 	numTrees: number;
 	pricePerTree: number;
 	projectType: string;
-	agreements: boolean[];
+	agreements: boolean;
 	imageFile: FileList | null;
 	imageUrlInput: string;
 	uploadMethod: boolean;
+	treeProjectType: string;
 	treeType: string;
 	energyType: string;
 	totalArea: number;
 	properties: Property[]; // Replace 'Property' with the actual type
 	projectAddressId: string;
 	projectBannerUrl: string;
-	targetKwhProductionPerYear: number;
+	energyProductionTarget: number;
 	numOfArrays: number;
 	installationTeam: string;
 	installedSystemSize: number;
@@ -39,16 +42,34 @@ interface FormValues {
 	estimatedInstallationCost: number;
 	estimatedSystemCost: number;
 	estimatedMaintenanceCost: number;
+	estimatedMaterialCost: number;
+	estimatedInstallationDate: string;
 	connectWithSolarPartner: string;
 	fundsRequested: number;
+	locationType: string;
+
+	isNonProfit: boolean;
+	estRevenue: number;
+	estRoiPercentage: number;
+	estLongTermRoiPercentage: number;
+
+	estSeedCost: number;
+	estLabourCost: number;
+	estMaintenanceCost: number;
+	estPlantingDate: string | EpochTimeStamp;
+	estMaturityDate: string | EpochTimeStamp;
 }
 
 function Edit() {
 	const router = useRouter();
 	const user = useAppSelector((state: RootState) => state.user);
 	const [project, setProject] = useState<Project | null>(null);
+	const [uploadedImgFiles, setUploadedImgFiles] = useState<File[]>([]);
 	const path = useParams();
 	const id = path?.id;
+	const [images, setImages] = useState<string[]>([]);
+	const [bannerUrl, setBannerUrl] = useState<string>("");
+	const [filePaths, setFilePaths] = useState<string[]>([]);
 	const {
 		register,
 		handleSubmit,
@@ -66,17 +87,17 @@ function Edit() {
 			numTrees: 0,
 			pricePerTree: 0,
 			projectType: "",
-			agreements: [false, false, false],
+			agreements: false,
 			imageFile: null,
-			imageUrlInput: "",
 			uploadMethod: true,
 			treeType: "",
+			treeProjectType: "",
 			energyType: "",
 			totalArea: 0,
 			properties: [],
 			projectAddressId: "",
 			projectBannerUrl: "",
-			targetKwhProductionPerYear: 0,
+			energyProductionTarget: 0,
 			numOfArrays: 0,
 			installationTeam: "",
 			installedSystemSize: 0,
@@ -84,31 +105,52 @@ function Edit() {
 			estimatedInstallationCost: 0,
 			estimatedSystemCost: 0,
 			estimatedMaintenanceCost: 0,
+			estimatedMaterialCost: 0,
+			estimatedInstallationDate: "",
 			connectWithSolarPartner: "",
 			fundsRequested: 0,
+			locationType: "",
+			isNonProfit: false,
+			estRevenue: 0,
+			estRoiPercentage: 0,
+			estSeedCost: 0,
+			estLabourCost: 0,
+			estMaintenanceCost: 0,
+			estPlantingDate: "",
+			estMaturityDate: "",
+			estLongTermRoiPercentage: 0,
 		},
 	});
 	const fetchProject = async () => {
-		const { data, error } = await supabase
-			.from("projects")
-			.select(
-				`*, tree_projects(*), energy_projects(*), solar_projects(*), producer_properties(*), project_milestones(*)`
-			)
-			.eq("id", id)
-			.neq("is_deleted", true);
-		if (error) {
-			console.error("Error fetching projects:", error);
-			toast.error(error.message);
-		}
-		if (data) {
-			setProject(
-				convertToCamelCase(data[0]) as
-					| Project
-					| TreeProject
-					| EnergyProject
-					| SolarProject
-			);
-		}
+		await axios
+			.post("/api/project", {
+				projectId: id,
+				options: {
+					query: `*, tree_projects(*), energy_projects(*), solar_projects(*), producer_properties(*), project_milestones(*), project_financials(*)`,
+				},
+			})
+			.then((res) => {
+				console.log("Project data:", res.data.data);
+				setProject(convertToCamelCase(res.data.data));
+			})
+			.catch((error) => {
+				console.error("Error fetching project:", error.message);
+				toast.error(error.message);
+			});
+
+		// if (error) {
+		// 	console.error("Error fetching projects:", error);
+		// 	toast.error(error.message);
+		// }
+		// if (data) {
+		// 	setProject(
+		// 		convertToCamelCase(data[0]) as
+		// 			| Project
+		// 			| TreeProject
+		// 			| EnergyProject
+		// 			| SolarProject
+		// 	);
+		// }
 	};
 	useEffect(() => {
 		fetchProject();
@@ -119,8 +161,9 @@ function Edit() {
 			setValue("title", project.title);
 			setValue("description", project.description);
 			setValue("numTrees", project.treeProjects.treeTarget);
-			setValue("imageUrlInput", project.imageUrl);
-			setValue("pricePerTree", project.treeProjects.fundsRequestedPerTree);
+			setBannerUrl(project.bannerUrl);
+			setImages(project.imageUrls);
+			setValue("pricePerTree", project.treeProjects?.fundsRequestedPerTree);
 			setValue("projectType", project.type);
 
 			setValue("energyType", project.energyProjectType);
@@ -129,13 +172,24 @@ function Edit() {
 			setValue("projectAddressId", project.propertyAddressId);
 			setValue("properties", [project.producerProperties]);
 			setValue("totalArea", project.totalAreaSqkm);
+			setValue("estRevenue", project.projectFinancials?.estRevenue);
+			setValue("estRoiPercentage", project.projectFinancials?.estRoiPercentage);
+			setValue(
+				"estLongTermRoiPercentage",
+				project.projectFinancials?.estLongTermRoiPercentage
+			);
+			setValue("isNonProfit", project.isNonProfit);
 			if (project.energyProjects) {
 				setValue(
-					"targetKwhProductionPerYear",
+					"energyProductionTarget",
 					project.energyProjects.targetKwhProductionPerYear
 				);
-				setValue("numOfArrays", project.energyProjects.targetArrays);
-				setValue("installationTeam", project.energyProjects.installationTeam);
+				setValue(
+					"locationType",
+					project.energyProjects?.solarProjects[0]?.locationType
+				);
+				setValue("numOfArrays", project.energyProjects?.targetArrays);
+				setValue("installationTeam", project.energyProjects?.installationTeam);
 				setValue(
 					"installedSystemSize",
 					project.solarProjects?.[0].systemSizeInKw
@@ -162,7 +216,16 @@ function Edit() {
 			if (project.treeProjects) {
 				setValue("numTrees", project.treeProjects.treeTarget);
 				setValue("pricePerTree", project.treeProjects.fundsRequestedPerTree);
-				setValue("treeType", project.treeProjects.type);
+				setValue("treeProjectType", project.treeProjects.projectType);
+				setValue("treeType", project.treeProjects.treeType);
+				setValue("estSeedCost", project.treeProjects.estSeedCost);
+				setValue("estLabourCost", project.treeProjects.estLabourCost);
+				setValue(
+					"estMaintenanceCost",
+					project.treeProjects.estMaintenanceCostPerYear
+				);
+				setValue("estPlantingDate", project.treeProjects.estPlantingDate);
+				setValue("estMaturityDate", project.treeProjects.estMaturityDate);
 			}
 		}
 	}, [project, setValue]);
@@ -183,7 +246,7 @@ function Edit() {
 	const fundsRequestedPerTree = watch("pricePerTree");
 	const treeType = watch("treeType");
 	const fundsRequested = watch("fundsRequested");
-	const energyProductionTarget = watch("targetKwhProductionPerYear");
+	const energyProductionTarget = watch("energyProductionTarget");
 	const numOfArrays = watch("numOfArrays");
 	const installedSystemSize = watch("installedSystemSize");
 	const photovoltaicCapacity = watch("photovoltaicCapacity");
@@ -192,24 +255,34 @@ function Edit() {
 	const estimatedMaintenanceCost = watch("estimatedMaintenanceCost");
 	const installationTeam = watch("installationTeam");
 	const connectWithSolarPartner = watch("connectWithSolarPartner");
+	const estRoiPercentage = watch("estRoiPercentage");
+	const estLongTermRoiPercentage = watch("estLongTermRoiPercentage");
+	const estRevenue = watch("estRevenue");
+	const isNonProfit = watch("isNonProfit");
+	const locationType = watch("locationType");
+	const treeProjectType = watch("treeProjectType");
+	const estSeedCost = watch("estSeedCost");
+	const estLabourCost = watch("estLabourCost");
+	const estPlantingDate = watch("estPlantingDate");
+	const estMaturityDate = watch("estMaturityDate");
+	const estMaintenanceCost = watch("estMaintenanceCost");
+	const [editPlantingDate, setEditPlantingDate] = useState(false);
+	const [editAddress, setEditAddress] = useState(false);
 	// Here we retrieve the properties the producer submitted that are verified so
 	// we can list them as options for the producer to select from when adding a project.
 	const fetchProperties = async (producerId: string) => {
 		setLoading({ loading: true, message: "Fetching properties..." });
-		const { data: propertyData, error: propertyError } = await supabase
-			.from("producer_properties")
-			.select("*")
-			.eq("producer_id", producerId)
-			.eq("is_verified", true);
-		if (propertyError) {
-			toast.error(`Error fetching properties. ${propertyError.message}`);
-			console.log("error fetching properties: ", propertyError);
-			setLoading({ loading: false, message: "" });
-		}
-		if (propertyData) {
-			setValue("properties", convertToCamelCase(propertyData) as Property[]);
-			setLoading({ loading: false, message: "" });
-		}
+		axios
+			.get(`/api/properties/verified?producerId=${producerId}`)
+			.then((res) => {
+				setValue("properties", res.data.data);
+				setLoading({ loading: false, message: "" });
+			})
+			.catch((error) => {
+				console.error("Error fetching properties:", error);
+				toast.error(error.message);
+				setLoading({ loading: false, message: "" });
+			});
 	};
 
 	useEffect(() => {
@@ -219,27 +292,26 @@ function Edit() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [user]);
 
-	let fileName = "";
-	// TODO: TEST THIS -> Generated from Co-Pilot
-	const uploadImage = async (file: File) => {
-		const fileExt = file.name.split(".").pop();
-		fileName = `${Math.random()}.${fileExt}`;
-		const filePath = `projects/${user.id}/${fileName}`;
-		const { data, error } = await supabase.storage
-			.from("projects")
-			.upload(filePath, file);
-		if (error) {
-			throw error;
+	// Upload all images to the server
+	const uploadImages = async (files: File[], projectId: string) => {
+		try {
+			await axios.post(`/api/upload_project_img`, { files, projectId });
+			toast.success("Images uploaded successfully!");
+		} catch (error: any) {
+			console.error("Error uploading images:", error);
+			toast.error(error.message);
+			throw error; // Propagate the error to the caller
 		}
 	};
 	const producerId = user.producerId;
 
-	const updateProject = async (bannerUrl: string) => {
+	const updateProject = async (imageUrls: string[]) => {
 		const status = "pending_update_review";
 		await axios
 			.post(`/api/projects/update`, {
 				title: title,
-				bannerUrl: bannerUrl,
+				bannerUrl: imageUrls[0],
+				imageUrls: imageUrls,
 				coordinatorName: coordinatorName,
 				coordinatorPhone: coordinatorPhone,
 				description: description,
@@ -276,30 +348,34 @@ function Edit() {
 
 	const onSubmit = async () => {
 		setLoading({ loading: true, message: "Uploading project..." });
-		const formValues = getValues();
-		let uploadedFilePath = "";
 
+		let uploadedFilePaths: string[] = [];
 		try {
-			if (formValues.imageFile && formValues.imageFile.length > 0) {
-				await uploadImage(formValues.imageFile[0]);
-				const fileExt = formValues.imageFile[0].name.split(".").pop();
-				uploadedFilePath = `projects/${user.id}/${fileName}`;
+			const publicURLs = [];
+			const projectId = id;
+			if (!projectId) return;
+			await uploadImages(uploadedImgFiles, projectId?.toString()); // Convert projectId to string
 
-				const { data: publicURL } = await supabase.storage
+			// Iterate through each uploaded image file
+			for (const file of uploadedImgFiles) {
+				const fileName = file.name;
+				const uploadedFilePath = `projects/${user.id}/${fileName}`;
+				uploadedFilePaths.push(uploadedFilePath);
+
+				// Get the public URL of the uploaded image file
+				const { data: publicURL } = supabase.storage
 					.from("projects")
 					.getPublicUrl(uploadedFilePath);
 
 				if (!publicURL) {
-					throw new Error("Error getting public URL of the image");
+					throw new Error(`Public URL not found for the image '${fileName}'`);
 				}
 
-				if (publicURL.publicUrl) {
-					await updateProject(publicURL.publicUrl);
-				}
-			} else if (formValues.imageUrlInput) {
-				await updateProject(formValues.imageUrlInput);
+				publicURLs.push(publicURL.publicUrl);
 			}
-			toast.success("Project updated!");
+
+			// Update the project with the array of public image URLs
+			await updateProject(publicURLs);
 		} catch (error) {
 			if (error instanceof Error) {
 				toast.error(`Error updating project: ${error.message}`);
@@ -309,8 +385,8 @@ function Edit() {
 				console.error("Error updating project:", error);
 			}
 
-			// Delete the uploaded image if the project update fails
-			if (uploadedFilePath) {
+			// Delete the uploaded images if the project update fails
+			for (const uploadedFilePath of uploadedFilePaths) {
 				const { error: deleteError } = await supabase.storage
 					.from("projects")
 					.remove([uploadedFilePath]);
@@ -321,8 +397,10 @@ function Edit() {
 			}
 		} finally {
 			setLoading({ loading: false, message: "" });
+			toast.success("Project updated!");
 		}
 	};
+
 	const toggleUploadMethod = () => {
 		setValue("uploadMethod", !getValues("uploadMethod"));
 	};
@@ -331,6 +409,23 @@ function Edit() {
 		router.back();
 	};
 
+	const onUpload = (file: File[]) => {
+		console.log("Files were uploaded: ", file);
+		setUploadedImgFiles(file);
+		file.map(({ name }) => {
+			const path = `/projects/${id}/${name}`;
+			setFilePaths([...filePaths, path]);
+		});
+	};
+
+	function findAddressById(addresses: any, searchId: string): any | null {
+		const foundAddress = addresses?.find(
+			(address: any) => address?.id === searchId
+		);
+		return foundAddress || null;
+	}
+	const selectedAddress = findAddressById(properties, projectAddressId);
+	console.log("selectedAddress", selectedAddress);
 	if (loading.loading)
 		return (
 			<div className='container mx-auto py-6 px-4 min-h-[100vh]'>
@@ -347,165 +442,276 @@ function Edit() {
 				← Back to project page
 			</p>
 			<h1 className='text-2xl font-semibold mb-6'>Update Project</h1>
+			{projectType === "Tree" ? (
+				<div className='text-2xl mb-4'>🌳 Tree Project</div>
+			) : "Energy" ? (
+				<div className='text-2xl mb-4'>⚡Energy Project</div>
+			) : null}
 			<form onSubmit={handleSubmit(onSubmit)}>
 				<label className='flex flex-col'>
 					<span className='mb-[4px] mt-2'>Project Title:</span>
 					<input
 						type='text'
-						className='text-gray-700 border-2 border-gray-300 rounded-md p-2 w-[500px]'
+						className='text-gray-700 border-2 border-gray-300 rounded-md p-2 w-full'
 						{...register("title", { required: true })}
 					/>
 				</label>
+
 				<br />
 				<label className='flex flex-col'>
 					<span className='mb-[4px] mt-2'>Project Location:</span>
+					{projectAddressId && (
+						<div className='flex items-center w-[max-content]'>
+							<p className=''>
+								{selectedAddress?.address.addressLineOne},{" "}
+								{selectedAddress?.address.addressLineTwo &&
+									`${selectedAddress?.address.addressLineTwo},`}
+								{selectedAddress?.address.city},{" "}
+								{selectedAddress?.address.country}
+							</p>
+							<button
+								className='mb-4 mt-2 text-left ml-2 w-fit bg-[var(--cta-one)] hover:bg-[var(--cta-one-hover)] text-white font-bold py-2 px-4 rounded transition-colors cursor-pointer'
+								onClick={(e) => {
+									e.preventDefault();
+									if (!editAddress) setEditAddress(true);
+									else setEditAddress(false);
+								}}
+							>
+								{editAddress ? "Cancel" : "Edit"}
+							</button>
+						</div>
+					)}
 
-					<select
-						{...register("projectAddressId", { required: true })}
-						className='text-gray-700 p-2 w-[500px] border-2 border-gray-300 rounded-md'
-					>
-						<option value=''>
-							Select the address your project will be operated from
-						</option>
-						{properties &&
-							properties.map(
-								(property: {
-									id: React.Key | null | undefined;
-									address: {
-										addressLineOne:
-											| string
-											| number
-											| boolean
-											| React.ReactElement<
-													any,
-													string | React.JSXElementConstructor<any>
-											  >
-											| React.ReactFragment
-											| React.ReactPortal
-											| React.PromiseLikeOfReactNode
-											| null
-											| undefined;
-										addressLineTwo: any;
-										city:
-											| string
-											| number
-											| boolean
-											| React.ReactElement<
-													any,
-													string | React.JSXElementConstructor<any>
-											  >
-											| React.ReactFragment
-											| React.ReactPortal
-											| React.PromiseLikeOfReactNode
-											| null
-											| undefined;
-										stateProvince:
-											| string
-											| number
-											| boolean
-											| React.ReactElement<
-													any,
-													string | React.JSXElementConstructor<any>
-											  >
-											| React.ReactFragment
-											| React.ReactPortal
-											| React.PromiseLikeOfReactNode
-											| null
-											| undefined;
-										country:
-											| string
-											| number
-											| boolean
-											| React.ReactElement<
-													any,
-													string | React.JSXElementConstructor<any>
-											  >
-											| React.ReactFragment
-											| React.ReactPortal
-											| React.PromiseLikeOfReactNode
-											| null
-											| undefined;
-									};
-								}) => (
-									<option
-										key={property.id}
-										value={property.id ? property.id.toString() : undefined}
-									>
-										{property.address.addressLineOne},{" "}
-										{property.address.addressLineTwo &&
-											`${property.address.addressLineTwo}, `}{" "}
-										{property.address.city}, {property.address.stateProvince},{" "}
-										{property.address.country}
-									</option>
-								)
-							)}
-					</select>
+					{editAddress && (
+						<select
+							{...register("projectAddressId", { required: true })}
+							className='text-gray-700 p-2 w-full border-2 border-gray-300 rounded-md'
+						>
+							<option value=''>
+								Select the address your project will be operated from
+							</option>
+							{properties &&
+								properties.map(
+									(property: {
+										id: React.Key | null | undefined;
+										address: {
+											addressLineOne:
+												| string
+												| number
+												| boolean
+												| React.ReactElement<
+														any,
+														string | React.JSXElementConstructor<any>
+												  >
+												| React.ReactFragment
+												| React.ReactPortal
+												| React.PromiseLikeOfReactNode
+												| null
+												| undefined;
+											addressLineTwo: any;
+											city:
+												| string
+												| number
+												| boolean
+												| React.ReactElement<
+														any,
+														string | React.JSXElementConstructor<any>
+												  >
+												| React.ReactFragment
+												| React.ReactPortal
+												| React.PromiseLikeOfReactNode
+												| null
+												| undefined;
+											stateProvince:
+												| string
+												| number
+												| boolean
+												| React.ReactElement<
+														any,
+														string | React.JSXElementConstructor<any>
+												  >
+												| React.ReactFragment
+												| React.ReactPortal
+												| React.PromiseLikeOfReactNode
+												| null
+												| undefined;
+											country:
+												| string
+												| number
+												| boolean
+												| React.ReactElement<
+														any,
+														string | React.JSXElementConstructor<any>
+												  >
+												| React.ReactFragment
+												| React.ReactPortal
+												| React.PromiseLikeOfReactNode
+												| null
+												| undefined;
+										};
+									}) => (
+										<option
+											key={property?.id}
+											value={property?.id ? property.id.toString() : undefined}
+										>
+											{property?.address.addressLineOne},{" "}
+											{property?.address.addressLineTwo &&
+												`${property?.address.addressLineTwo}, `}{" "}
+											{property?.address.city},{" "}
+											{property?.address.stateProvince},{" "}
+											{property?.address.country}
+										</option>
+									)
+								)}
+						</select>
+					)}
 				</label>
 				<br />
-				<label className='flex flex-col'>
-					<span className='mb-[4px] mt-2'>Project Type:</span>
-					<select
-						{...register("projectType", { required: true })}
-						className='text-gray-700 p-2 w-[500px] border-2 border-gray-300 rounded-md'
-					>
-						<option value=''>Select a project type</option>
-						<option value='Tree'>Tree</option>
-						<option value='Energy'>Renewable Energy</option>
-					</select>
-				</label>
 
-				{projectType === "Tree" && (
-					<label className='flex flex-col mt-[8px]'>
-						<span className='mb-[4px] mt-2'>Tree Project Type:</span>
-						<select
-							{...register("treeType", { required: true })}
-							className='text-gray-700 p-2 w-[500px] border-2 border-gray-300 rounded-md'
-						>
-							<option value=''>Select a tree project type</option>
-							<option value='Timber / Lumber'>Timber / Lumber</option>
-							<option value='Fruit'>Fruits</option>
-							<option value='Nut'>Nuts</option>
-							<option value='Bio Fuel'>Bio Fuel</option>
-							<option value='Pulp'>Pulp</option>
-							<option value='Syrup'>Syrup</option>
-							<option value='Oil / Chemical'>Oils / Chemicals</option>
-							<option value='Non-Profit Initiative'>
-								Non-Profit Initiatives
-							</option>
-						</select>
-					</label>
-				)}
 				<label className='flex flex-col'>
 					<span className='mb-[4px] mt-2'>Total Project Area (km²)</span>
 					<input
 						type='number'
 						{...register("totalArea", { required: true })}
-						className='border-2 border-gray-300 rounded-md p-2 w-[500px]'
+						className='border-2 border-gray-300 rounded-md p-2 w-full'
 					/>
 				</label>
 				{projectType === "Tree" && (
 					<>
-						<label className='flex flex-col'>
+						<label className='flex flex-col mt-[8px] md:w-[800px]'>
+							<span className='mb-[4px] mt-2'>Tree Project Type:</span>
+							<select
+								{...register("treeProjectType", { required: true })}
+								className='text-gray-700 p-2 w-full border-2 border-gray-300 rounded-md'
+							>
+								<option value=''>Select a tree project type</option>
+								{isNonProfit && (
+									<option value='Restoration'>Restoration</option>
+								)}
+								<option value='Timber / Lumber'>Timber / Lumber</option>
+								<option value='Fruit'>Fruits</option>
+								<option value='Nut'>Nuts</option>
+								<option value='Bio Fuel'>Bio Fuel</option>
+								<option value='Pulp'>Pulp</option>
+								<option value='Syrup'>Syrup</option>
+								<option value='Oil / Chemical'>Oils / Chemicals</option>
+							</select>
+						</label>
+						<label className='flex flex-col md:w-[800px]'>
 							<span className='mb-[4px] mt-2'>
 								How many trees are you aiming to plant for this project?
 							</span>
-							<input
-								type='number'
-								{...register("numTrees", { required: true })}
-								className='border-2 border-gray-300 rounded-md p-2 w-[500px]'
-							/>
+							<div className='bg-white border-2 border-gray-300 rounded-md p-2 text-gray-400'>
+								🌳{" "}
+								<input
+									type='number'
+									{...register("numTrees", { required: true })}
+									className='w-[90%] md:w-[96%] outline-none'
+								/>
+							</div>
 						</label>
-						<label className='flex flex-col'>
+						<label className='flex flex-col md:w-[800px]'>
 							<span className='mb-[4px] mt-2'>
-								How much do you want to raise per tree?
+								What kind of trees are you going to plant?
 							</span>
-							$
-							<input
-								type='number'
-								step='1'
-								{...register("pricePerTree", { required: true })}
-								className='border-2 border-gray-300 rounded-md p-2 w-[500px]'
-							/>
+							<div className='bg-white border-2 border-gray-300 rounded-md p-2 text-gray-400'>
+								🌳{" "}
+								<input
+									type='text'
+									{...register("treeType", { required: true })}
+									className='w-[90%] md:w-[96%] outline-none'
+								/>
+							</div>
+						</label>
+						<label className='flex flex-col md:w-[800px]'>
+							<span className='mb-[4px] mt-2'>
+								How much do you want to raise for seeds/saplings?
+							</span>
+							<div className='bg-white border-2 border-gray-300 rounded-md p-2 text-gray-400'>
+								${" "}
+								<input
+									type='number'
+									step='1'
+									{...register("estSeedCost", { required: true })}
+									className='w-[90%] md:w-[97%] outline-none'
+								/>
+							</div>
+							<span className='mb-[4px] mt-2'>
+								How much will the planting & labour cost be?
+							</span>
+							<div className='bg-white border-2 border-gray-300 rounded-md p-2 text-gray-400'>
+								${" "}
+								<input
+									type='number'
+									step='1'
+									{...register("estLabourCost", { required: true })}
+									className='w-[90%] md:w-[97%] outline-none'
+								/>
+							</div>
+							<span className='mb-[4px] mt-2'>
+								How much will the yearly maintenance cost be?
+							</span>
+							<div className='bg-white border-2 border-gray-300 rounded-md p-2 text-gray-400'>
+								${" "}
+								<input
+									type='number'
+									step='1'
+									{...register("estMaintenanceCost", { required: true })}
+									className='w-[90%] md:w-[97%] outline-none'
+								/>
+							</div>
+							<div className='flex mt-12'>
+								{!editPlantingDate ? (
+									<div>
+										<span className='mb-[4px] mt-2 mr-2'>
+											Estimate planting date:
+										</span>
+										{moment(estPlantingDate).format("MMMM DD, YYYY")}
+										<button
+											className='mb-4 mt-2 text-left ml-2 w-fit bg-[var(--cta-one)] hover:bg-[var(--cta-one-hover)] text-white font-bold py-2 px-4 rounded transition-colors cursor-pointer'
+											onClick={(e) => {
+												e.preventDefault();
+												setEditPlantingDate(true);
+											}}
+										>
+											Edit
+										</button>
+									</div>
+								) : (
+									<div>
+										<span className='mb-[4px] mt-2 mr-2'>
+											Select new planting date:
+										</span>
+
+										<input
+											type='date'
+											{...register("estPlantingDate", { required: true })}
+											className='bg-white border-2 border-gray-300 rounded-md mt-2 p-2 text-gray-400 w-max'
+										/>
+										<button
+											className='mb-4 mt-2 text-left ml-2 w-fit bg-[var(--cta-one)] hover:bg-[var(--cta-one-hover)] text-white font-bold py-2 px-4 rounded transition-colors cursor-pointer'
+											onClick={(e) => {
+												e.preventDefault();
+												setEditPlantingDate(false);
+											}}
+										>
+											Cancel
+										</button>
+									</div>
+								)}
+								{treeProjectType !== "Restoration" && (
+									<div>
+										<span className='mb-[4px] mt-2'>
+											When is the estimated harvest date?
+										</span>
+										<input
+											type='date'
+											{...register("estMaturityDate", { required: true })}
+											className='bg-white border-2 border-gray-300 rounded-md mt-2 p-2 text-gray-400 w-max'
+										/>
+									</div>
+								)}
+							</div>
 						</label>
 					</>
 				)}
@@ -517,7 +723,7 @@ function Edit() {
 							</span>
 							<select
 								{...register("energyType", { required: true })}
-								className='text-gray-700 p-2 w-[500px] border-2 border-gray-300 rounded-md'
+								className='text-gray-700 p-2 w-full border-2 border-gray-300 rounded-md'
 							>
 								<option value=''>Select a renewable energy project type</option>
 								<option value='Solar'>Solar</option>
@@ -531,10 +737,10 @@ function Edit() {
 										(kWh)?
 									</span>
 									<input
-										{...register("targetKwhProductionPerYear", {
+										{...register("energyProductionTarget", {
 											required: true,
 										})}
-										className='text-gray-700 p-2 w-[500px] border-2 border-gray-300 rounded-md'
+										className='text-gray-700 p-2 w-full border-2 border-gray-300 rounded-md'
 										type='number'
 									/>
 								</label>
@@ -544,7 +750,7 @@ function Edit() {
 									</span>
 									<input
 										{...register("numOfArrays", { required: true })}
-										className='text-gray-700 p-2 w-[500px] border-2 border-gray-300 rounded-md'
+										className='text-gray-700 p-2 w-full border-2 border-gray-300 rounded-md'
 										type='text'
 									/>
 								</label>
@@ -556,7 +762,7 @@ function Edit() {
 									</span>
 									<select
 										{...register("installationTeam", { required: true })}
-										className='text-gray-700 p-2 w-[500px] border-2 border-gray-300 rounded-md'
+										className='text-gray-700 p-2 w-full border-2 border-gray-300 rounded-md'
 									>
 										<option value=''>Select one</option>
 										<option value='Has company'>
@@ -577,7 +783,7 @@ function Edit() {
 											</span>
 											<input
 												{...register("installedSystemSize")}
-												className='text-gray-700 p-2 w-[500px] border-2 border-gray-300 rounded-md'
+												className='text-gray-700 p-2 w-full border-2 border-gray-300 rounded-md'
 												type='number'
 											/>
 										</label>
@@ -588,7 +794,7 @@ function Edit() {
 											</span>
 											<input
 												{...register("photovoltaicCapacity")}
-												className='text-gray-700 p-2 w-[500px] border-2 border-gray-300 rounded-md'
+												className='text-gray-700 p-2 w-full border-2 border-gray-300 rounded-md'
 												type='number'
 											/>
 										</label>
@@ -599,7 +805,7 @@ function Edit() {
 											$
 											<input
 												{...register("estimatedInstallationCost")}
-												className='text-gray-700 p-2 w-[500px] border-2 border-gray-300 rounded-md'
+												className='text-gray-700 p-2 w-full border-2 border-gray-300 rounded-md'
 												type='number'
 											/>
 										</label>
@@ -609,7 +815,7 @@ function Edit() {
 											</span>
 											<input
 												{...register("estimatedSystemCost")}
-												className='text-gray-700 p-2 w-[500px] border-2 border-gray-300 rounded-md'
+												className='text-gray-700 p-2 w-full border-2 border-gray-300 rounded-md'
 												type='number'
 											/>
 										</label>
@@ -620,7 +826,7 @@ function Edit() {
 											</span>
 											<input
 												{...register("estimatedMaintenanceCost")}
-												className='text-gray-700 p-2 w-[500px] border-2 border-gray-300 rounded-md'
+												className='text-gray-700 p-2 w-full border-2 border-gray-300 rounded-md'
 												type='number'
 											/>
 										</label>
@@ -635,7 +841,7 @@ function Edit() {
 											</span>
 											<select
 												{...register("connectWithSolarPartner")}
-												className='text-gray-700 p-2 w-[500px] border-2 border-gray-300 rounded-md'
+												className='text-gray-700 p-2 w-full border-2 border-gray-300 rounded-md'
 											>
 												<option value=''>Select one</option>
 												<option value='Connect with partner'>
@@ -655,7 +861,7 @@ function Edit() {
 									</span>
 									<input
 										{...register("fundsRequested")}
-										className='text-gray-700 p-2 w-[500px] border-2 border-gray-300 rounded-md'
+										className='text-gray-700 p-2 w-full border-2 border-gray-300 rounded-md'
 										type='number'
 									/>
 								</label>
@@ -665,49 +871,144 @@ function Edit() {
 				)}
 				<br />
 				<label>
-					<span className='mt-2'>Project Banner Image:</span>
+					<span className='mt-2'>Project Images:</span>
 					<Image
 						alt=''
-						src={formValues.imageUrlInput}
+						src={bannerUrl}
 						width={150}
 						height={150}
 						className='mt-2 rounded'
 					/>
 					<br />
-					<button
-						type='button'
-						onClick={toggleUploadMethod}
-						className='mb-4 mt-2 text-left mr-2 w-fit bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors cursor-pointer'
-					>
-						{uploadMethod ? "Switch to image URL" : "Switch to image upload"}
-					</button>
-					<br />
-					{uploadMethod ? (
-						<input
-							{...register("imageFile")}
-							type='file'
-							accept='image/png, image/jpeg'
-							className='border-2 border-gray-300 rounded-md p-2 w-[500px] cursor-pointer'
+					{/* Loop through images and display them */}
+					{images &&
+						images.map(
+							(img, index) =>
+								// skip the first image as it's the banner
+								index !== 0 && (
+									<Image
+										key={index}
+										alt=''
+										src={img}
+										width={150}
+										height={150}
+										className='mt-2 rounded'
+									/>
+								)
+						)}
+					{filePaths.length > 0 && (
+						<>
+							{filePaths.map((file, index) => (
+								<Image
+									key={index}
+									alt=''
+									src={file}
+									width={150}
+									height={150}
+									className='mt-2 rounded'
+								/>
+							))}
+						</>
+					)}
+					{project && (
+						<ImageUpload
+							onUpload={onUpload}
+							projectId={project?.id!}
 						/>
-					) : (
-						<label className='flex flex-col'>
-							<span className='mb-[4px] mt-2'>Paste direct image URL:</span>
-							<input
-								{...register("imageUrlInput")}
-								type='text'
-								className='border-2 border-gray-300 rounded-md p-2 w-[500px]'
-							/>
-						</label>
 					)}
 				</label>
 				<br />
-
+				{!isNonProfit && locationType !== "Residential" && (
+					<>
+						<label className='flex flex-col md:w-[800px]'>
+							{projectType === "Tree" ? (
+								<span className='mb-[4px] mt-2'>
+									What do you estimate the revenue{" "}
+									{treeProjectType === "Timber / Lumber" ? "" : "per year"} will
+									be?
+								</span>
+							) : (
+								<span className='mb-[4px] mt-2'>
+									What do you estimate the revenue per year will be?
+								</span>
+							)}
+							<div className='border-2 border-gray-300 rounded-md p-2 bg-white text-gray-400'>
+								${" "}
+								<input
+									{...register("estRevenue", { required: true })}
+									type='number'
+									className='w-[98%] outline-none'
+								/>
+							</div>
+						</label>
+						<br />
+						{treeProjectType === "Timber / Lumber" ? (
+							<>
+								<label className='flex flex-col md:w-[800px]'>
+									<span className='mb-[4px] mt-2'>
+										What percentage of the profits will you offer investors when
+										the trees are ready to harvest?
+									</span>
+									<div className='border-2 border-gray-300 rounded-md p-2 bg-white text-gray-400'>
+										%{" "}
+										<input
+											{...register("estRoiPercentage", { required: true })}
+											type='number'
+											className='w-[90%] md:w-[97%] outline-none'
+											min={0}
+											max={100}
+										/>
+									</div>
+								</label>
+							</>
+						) : (
+							<>
+								<label className='flex flex-col md:w-[800px]'>
+									<span className='mb-[4px] mt-2'>
+										What percentage of the profits will you offer investors
+										until the investment is repaid?
+									</span>
+									<div className='border-2 border-gray-300 rounded-md p-2 bg-white text-gray-400'>
+										%{" "}
+										<input
+											{...register("estRoiPercentage", { required: true })}
+											type='number'
+											className='w-[90%] md:w-[97%] outline-none'
+											min={0}
+											max={100}
+										/>
+									</div>
+								</label>
+								<br />
+								<label className='flex flex-col md:w-[800px]'>
+									<span className='mb-[4px] mt-2'>
+										What percentage of the profits will you offer investors
+										after the investment is repaid?
+									</span>
+									<div className='border-2 border-gray-300 rounded-md p-2 bg-white text-gray-400'>
+										%{" "}
+										<input
+											{...register("estLongTermRoiPercentage", {
+												required: true,
+											})}
+											type='number'
+											className='w-[90%] md:w-[97%] outline-none'
+											min={0}
+											max={100}
+										/>
+									</div>
+								</label>
+							</>
+						)}
+						<br />
+					</>
+				)}
 				<label className='flex flex-col'>
 					<span className='mb-[4px] mt-2'>Project Coordinator Name:</span>
 					<input
 						{...register("coordinatorName", { required: true })}
 						type='text'
-						className='border-2 border-gray-300 rounded-md p-2 w-[500px]'
+						className='border-2 border-gray-300 rounded-md p-2 w-full'
 					/>
 				</label>
 
@@ -716,7 +1017,7 @@ function Edit() {
 					<input
 						{...register("coordinatorPhone", { required: true })}
 						type='tel'
-						className='border-2 border-gray-300 rounded-md p-2 w-[500px]'
+						className='border-2 border-gray-300 rounded-md p-2 w-full'
 					/>
 				</label>
 				<br />
@@ -724,13 +1025,13 @@ function Edit() {
 					<span className='mb-[4px] mt-2'>Project Description:</span>
 					<textarea
 						{...register("description", { required: true })}
-						className='text-gray-700 border-2 border-gray-300 rounded-md p-2 h-[150px] w-[500px]'
+						className='text-gray-700 border-2 border-gray-300 rounded-md p-2 h-[150px] w-full'
 					/>
 				</label>
 				<br />
 				<button
 					type='submit'
-					className='mt-[16px] bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors cursor-pointer'
+					className='mt-[16px] bg-[var(--cta-one)] hover:bg-[var(--cta-one-hover)] text-white font-bold py-2 px-4 rounded transition-colors cursor-pointer'
 				>
 					Submit Project
 				</button>

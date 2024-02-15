@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import withAuth from "@/utils/withAuth";
 import { IoMdAddCircle } from "react-icons/io";
 import Loading from "@/components/Loading";
+import axios from "axios";
 type Props = {};
 function Projects({}: Props) {
 	const router = useRouter();
@@ -21,30 +22,25 @@ function Projects({}: Props) {
 
 	const fetchProjects = async () => {
 		setLoading(true);
-		const { data, error } = await supabase
-			.from("projects")
-			.select(
-				"*, project_milestones(*), tree_projects(*), energy_projects(*), solar_projects(*), project_financials(*)"
-			)
-			.eq("producer_id", user.producerId)
-			.neq("is_deleted", true)
-			.order("status", { ascending: false });
 
-		if (error) {
-			setLoading(false);
-			console.error("Error fetching projects:", error);
-		} else {
-			setLoading(false);
-			setProjects(convertToCamelCase(data) as Project[]);
-		}
+		await axios
+			.post("/api/p/projects", { producerId: user.producerId })
+			.then((res) => {
+				setLoading(false);
+				setProjects(convertToCamelCase(res.data.data) as Project[]);
+			})
+			.catch((error) => {
+				setLoading(false);
+				console.error("Error fetching projects:", error);
+			});
 	};
+
 	useEffect(() => {
 		if (user) {
 			fetchProjects();
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [user]);
-	console.log("projects >>> ", projects);
 	useEffect(() => {
 		if (projects.length > 0) {
 			setPercentagesFunded(

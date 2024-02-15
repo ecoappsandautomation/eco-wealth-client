@@ -29,20 +29,14 @@ export default function ProducerOnboarding() {
 
 	// redundant id check to prevent no producer user profile from not being created
 	const createProducerProfile = async () => {
-		const { data, error } = await supabase
-			.from("producers")
-			.insert([
-				{
-					user_id: user.id,
-				},
-			])
-			.select();
-		if (error) {
-			console.error("Error inserting producer:", error.message);
-		}
-		if (data) {
-			dispatch(setUser({ ...user, producerId: data[0].id }));
-		}
+		await axios
+			.post("/api/producer/create", { userId: user.id })
+			.then((res) => {
+				console.log("Producer profile created: ", res.data);
+			})
+			.catch((err) => {
+				console.log("Error creating producer profile: ", err);
+			});
 	};
 
 	useEffect(() => {
@@ -51,25 +45,6 @@ export default function ProducerOnboarding() {
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [user]);
-
-	const handleUpdateProducerOnboardingStatus = async (onboardingId: string) => {
-		const { data, error } = await supabase
-			.from("producers")
-			.update({
-				onboarding_complete: true,
-				onboarding_id: onboardingId,
-			})
-			.eq("user_id", user.id);
-		if (error) {
-			console.error("Error updating producer onboarding status:", error);
-			toast.error(
-				`Error updating producer onboarding status: ${error.message}`
-			);
-			return;
-		}
-
-		dispatch(setUser({ ...user, producerOnboardingComplete: true }));
-	};
 
 	const handleUpdateProducerOnboardingData = async () => {
 		const address = {
@@ -80,46 +55,35 @@ export default function ProducerOnboarding() {
 			postalCode: onboarding.postalCode,
 			country: onboarding.country,
 		};
-		const { data, error } = await supabase
-			.from("producer_onboarding")
-			.insert([
-				{
-					producer_id: user.producerId,
-					goals: onboarding.producerGoal,
-					operation_type: onboarding.operationType,
-					current_operations: {
-						has_tree_farm_operation: onboarding.hasTreeFarmOperation,
-						tree_types: onboarding.treeTypes,
-						tree_op_size: onboarding.treeOpSize,
-						has_solar_farm_operation: onboarding.hasSolarFarmOperation,
-						solar_types: onboarding.solarTypes,
-						solar_op_size: onboarding.solarOpSize,
-					},
-					property_zone_map: onboarding.propertyZoneMap,
-					address: address,
-				},
-			])
-			.select();
-		if (error) {
-			console.error("Error updating producer onboarding data:", error);
-			toast.error(`Error updating producer onboarding data: ${error.message}`);
-			return;
-		}
-		if (data) {
-			handleUpdateProducerOnboardingStatus(data[0].id);
-
-			await axios
-				.post(`/api/properties`, {
-					producerId: user.producerId,
-					address: address,
-				})
-				.then((res) => {
-					console.log("Property created: ", res.data);
-				})
-				.catch((err) => {
-					console.log("Error creating property: ", err);
-				});
-		}
+		const producerData = {
+			producer_id: user.producerId,
+			goals: onboarding.producerGoal,
+			operation_type: onboarding.operationType,
+			current_operations: {
+				has_tree_farm_operation: onboarding.hasTreeFarmOperation,
+				tree_types: onboarding.treeTypes,
+				tree_op_size: onboarding.treeOpSize,
+				has_solar_farm_operation: onboarding.hasSolarFarmOperation,
+				solar_types: onboarding.solarTypes,
+				solar_op_size: onboarding.solarOpSize,
+			},
+			property_zone_map: onboarding.propertyZoneMap,
+			address: address,
+		};
+		await axios
+			.post("/api/onboard/producer", {
+				producerData,
+				userId: user.id,
+				producerId: user.producerId,
+			})
+			.then((res) => {
+				console.log("Producer onboarding complete: ", res.data);
+				dispatch(setUser({ ...user, producerOnboardingComplete: true }));
+				router.push("/p/dashboard");
+			})
+			.catch((err) => {
+				console.log("Error creating producer onboarding data: ", err);
+			});
 	};
 
 	// Here we manage the view of the onboarding steps

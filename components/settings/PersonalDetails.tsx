@@ -2,6 +2,7 @@
 import { setUser } from "@/redux/features/userSlice";
 import { useAppDispatch } from "@/redux/hooks";
 import { supabaseClient as supabase } from "@/utils/supabaseClient";
+import axios from "axios";
 import React, { useState } from "react";
 import { toast } from "react-toastify";
 
@@ -18,29 +19,25 @@ export default function PersonalDetails({ user }: Props) {
 
 	// here we have a function called submitUserDetails that posts the data to the supabase database
 	const submitUserDetails = async () => {
-		const { data, error } = await supabase
-			.from("users")
-			.update({
-				name: name,
-				email: email,
-				phone_number: phone,
+		axios
+			.post("/api/settings/profile", { name, email, phone, userId: user.id })
+			.then((res) => {
+				console.log(res.data);
+				toast.success("Profile information updated successfully");
 			})
-			.eq("id", user.id);
-		if (error) {
-			console.log(error.message);
-			toast.error(`Could not update profile information: ${error.message}`);
-			return;
-		}
-		// Here we update redux with the new user details
-		dispatch(
-			setUser({
-				...user,
-				name: name,
-				email: email,
-				phoneNumber: phone,
-			})
-		);
-		setLoading(false);
+			.catch((error) => {
+				console.log(error.message);
+				toast.error(`Could not update profile information: ${error.message}`);
+				dispatch(
+					setUser({
+						...user,
+						name: name,
+						email: email,
+						phoneNumber: phone,
+					})
+				);
+				setLoading(false);
+			});
 	};
 
 	const handleSubmit = (event: React.FormEvent) => {

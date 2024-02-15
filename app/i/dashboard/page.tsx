@@ -206,19 +206,19 @@ const Dashboard = ({}: DashboardProps) => {
 
 	if (loading)
 		return (
-			<div className='lg:w-[1200px] w-[90%] h-[100vh] mx-auto'>
+			<div className='xl:w-[1200px] w-[90%] h-[100vh] mx-auto'>
 				<h1 className='text-3xl font-semibold mt-8'>Investor Dashboard</h1>
 				<Loading />
 			</div>
 		);
 
 	return (
-		<div className='h-[100vh] lg:w-[1200px] mx-auto w-[90%]'>
-			<h1 className='text-2xl md:text-3xl font-bold my-4 md:my-8 md::ml-0'>
+		<div className='w-3/4 mx-auto'>
+			<h1 className='text-2xl md:text-3xl font-bold my-4 md:my-8'>
 				Investor Dashboard | Hello {user.name}!
 			</h1>
-			<div className='mx-auto border border-[var(--header-border)] rounded-lg p-4 md:p-8 text-center'>
-				<div className='grid grid-cols-3 gap-4 md:gap-8'>
+			<div className='text-sm md:text-base mx-auto border border-[var(--cta-one)] rounded-lg py-2 md:p-8 text-center mb-8'>
+				<div className='grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 p-4'>
 					<div className='flex flex-col items-center md:p-4 hover:border-white rounded-md  transition-all hover:bg-green-50 hover:bg-opacity-5'>
 						<h3 className='mb-2 text-sm md:text-base text-gray-400'>
 							You&apos;ve Contributed
@@ -278,7 +278,7 @@ const Dashboard = ({}: DashboardProps) => {
 					</div>
 				</div>
 				<hr className='my-4 md:my-8 border-[var(--header-border)]' />
-				<div className='grid grid-cols-3 gap-4 md:gap-8'>
+				<div className='grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 p-4'>
 					<div className='flex flex-col items-center md:p-4 hover:border-white rounded-md  transition-all hover:bg-green-50 hover:bg-opacity-5'>
 						<h3 className='mb-2 text-sm md:text-base text-gray-400'>
 							You&apos;ve Contributed

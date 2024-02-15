@@ -6,6 +6,7 @@ import { RootState } from "@/redux/store"; // You need to create this file
 import { useAppSelector, useAppDispatch } from "@/redux/hooks";
 import { supabaseClient as supabase } from "@/utils/supabaseClient";
 import withAuth from "@/utils/withAuth";
+import axios from "axios";
 
 const Onboarding: FC = () => {
 	const router = useRouter();
@@ -16,68 +17,41 @@ const Onboarding: FC = () => {
 	const [name, setName] = useState<string>("");
 	const [phone, setPhone] = useState<string>("");
 	const [step, setStep] = useState(0);
-
+	function getFirstCharacterLowerCase(str: string) {
+		// Check if the string is not empty
+		if (str && str.length > 0) {
+			// Return the first character of the string in lowercase
+			return str.charAt(0).toLowerCase();
+		} else {
+			// Return null if the string is empty or null
+			return null;
+		}
+	}
 	//  Here we update the user's role in the database and redux store
 	const updateUserData = async (role: string) => {
-		dispatch(
-			setUser({
-				...user,
-				roles: [role],
-				activeRole: role,
-				phoneNumber: phone,
-				onboardingComplete: true,
-			})
-		);
-		const { data, error } = await supabase
-			.from("users")
-			.update({
+		await axios
+			.post("/api/onboard/user", {
+				userId: user.id,
+				role: role,
 				name: name,
-				roles: [role],
-				phone_number: phone,
-				active_role: role,
-				onboarding_complete: true,
+				phone: phone,
 			})
-			.eq("id", user.id);
-		if (error) {
-			console.error("Error updating user role:", error.message);
-			setLoading(false);
-		}
-		if (data) {
-			if (role === "investor") {
-				const { data, error } = await supabase.from("investors").insert([
-					{
-						user_id: user.id,
-					},
-				]);
-				const { data: analyticData, error: analyticErr } = await supabase
-					.from("analytics")
-					.insert([
-						{
-							user_id: user.id,
-						},
-					]);
-				if (error) {
-					console.error("Error inserting investor:", error.message);
-				}
-				if (data) {
-					router.push("/i/onboarding");
-				}
-			}
-
-			if (role === "producer") {
-				const { data, error } = await supabase.from("producers").insert([
-					{
-						user_id: user.id,
-					},
-				]);
-				if (error) {
-					console.error("Error inserting producer:", error.message);
-				}
-				if (data) {
-					router.push("/p/onboarding");
-				}
-			}
-		}
+			.then((res) => {
+				dispatch(
+					setUser({
+						...user,
+						roles: [role],
+						activeRole: role,
+						phoneNumber: phone,
+						onboardingComplete: true,
+					})
+				);
+				setLoading(false);
+				router.push(`/${getFirstCharacterLowerCase(role)}/onboarding`);
+			})
+			.catch((error) => {
+				console.error("Error updating user role:", error.message);
+			});
 	};
 
 	const handleButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -104,11 +78,12 @@ const Onboarding: FC = () => {
 		setPhone(e.target.value);
 	};
 
+	// This useEffect handles redirection to the user's respective onboarding if they visit the onboarding page again
 	useEffect(() => {
-		if (user?.activeRole === "investor") {
-			router.push("/i/onboarding");
-		} else if (user?.activeRole === "producer") {
-			router.push("/p/onboarding");
+		if (user?.activeRole) {
+			router.push(
+				`/${getFirstCharacterLowerCase(user?.activeRole)}/onboarding`
+			);
 		}
 	}, [user?.activeRole, router]);
 

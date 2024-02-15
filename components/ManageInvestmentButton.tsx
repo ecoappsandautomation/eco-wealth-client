@@ -33,7 +33,6 @@ export default function ManageInvestmentButton({ investment }: Props) {
 				investmentId: selectedInvestment.id,
 			})
 			.then((res) => {
-				console.log("res.data >>> ", res.data);
 				if (res.data) {
 					alert("Refund processed!");
 					setProcessingRefund(false);

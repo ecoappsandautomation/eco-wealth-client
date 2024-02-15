@@ -2,6 +2,7 @@
 import { useAppSelector } from "@/redux/hooks";
 import { RootState } from "@/redux/store";
 import { supabaseClient as supabase } from "@/utils/supabaseClient";
+import axios from "axios";
 import { useEffect, useState } from "react";
 import { FaUnlock } from "react-icons/fa";
 import { toast } from "react-toastify";
@@ -21,32 +22,33 @@ function UnenrollMFA({ onCancelled }: Props) {
 	const user = useAppSelector((state: RootState) => state.user);
 	useEffect(() => {
 		(async () => {
-			const { data, error } = await supabase.auth.mfa.listFactors();
-			if (error) {
-				return error;
-			}
-			setFactors(data.totp as any);
-			console.log("unenroll data -> ", data);
-			setFactorId(data.totp[0].id);
+			await axios
+				.get("/api/mfa/list_factors")
+				.then((res) => {
+					console.log("res.data >>> ", res.data);
+					setFactors(res.data.factors);
+					setFactorId(res.data.factorId);
+				})
+				.catch((error) => {
+					setError(error.message);
+				});
 		})();
 	}, []);
 
 	const handleCancel = async (id: string) => {
-		const { data, error } = await supabase.auth.mfa.unenroll({ factorId: id });
-		if (error) {
-			toast.error(`${error.message}`);
-		}
-		if (data) {
-			onCancelled();
-			if (factors.length === 1) {
-				await supabase
-					.from("users")
-					.update({
-						mfa_enabled: false,
-					})
-					.eq("id", user.id);
-			}
-		}
+		await axios
+			.post("/api/mfa/unenroll", {
+				factorId: id,
+				userId: user.id,
+				factors,
+			})
+			.then((res) => {
+				toast.success("MFA unenrolled successfully");
+				onCancelled();
+			})
+			.catch((error) => {
+				setError(error.message);
+			});
 	};
 	return (
 		<>

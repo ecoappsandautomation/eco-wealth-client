@@ -1,5 +1,5 @@
 "use client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect } from "react";
 import { RootState } from "@/redux/store"; // Import RootState from your Redux store
 
@@ -13,13 +13,28 @@ import WaitingListGoalTracker from "@/components/WaitingListGoalTracker";
 import Disclaimer from "@/components/home/Disclaimer";
 import Footer from "@/components/home/Footer";
 import { setUser } from "@/redux/features/userSlice";
-// TODO: remove guard statements in login & signup pages when launching beta
+import handleReferralId from "@/utils/handleReferralId";
+import PrototypePreview from "@/components/home/PrototypePreview";
+// TODO: create a stream schedule
+// TODO: Checkout luda's story on insta
+
+// TODO: remove guard statements in login & sign up pages when launching beta
 export default function Home() {
 	const backgroundImageUrl =
 		"https://storage.googleapis.com/msgsndr/6xhGkq67K123q2R9TMf0/media/644868002b9d838721622a4d.jpeg";
 	const router = useRouter();
 	const [treeCount, setTreeCount] = React.useState(0);
 	const [arrayCount, setArrayCount] = React.useState(0);
+
+	const searchParams = useSearchParams();
+	const referralId = searchParams?.get("r");
+
+	// Store referralId in localStorage
+	useEffect(() => {
+		if (referralId) {
+			handleReferralId(referralId);
+		}
+	}, [referralId]);
 
 	const user = useAppSelector((state: RootState) => state.user);
 
@@ -148,6 +163,7 @@ export default function Home() {
 			</div>
 			<div className='2xl:w-[1200px] md:mx-auto mt-[90vh]'>
 				<About />
+				<PrototypePreview />
 				<Strategy />
 				<HowItWorks />
 				<Pricing />

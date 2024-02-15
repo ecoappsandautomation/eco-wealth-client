@@ -10,6 +10,7 @@ import { toast } from "react-toastify";
 import { setUser } from "@/redux/features/userSlice";
 import withAuth from "@/utils/withAuth";
 import { RootState } from "@/redux/store";
+import axios from "axios";
 type Props = {};
 
 function SetupMfa({}: Props) {
@@ -23,7 +24,10 @@ function SetupMfa({}: Props) {
 	const dispatch = useAppDispatch();
 	const user = useAppSelector((state: RootState) => state.user);
 	const handleLogout = async () => {
-		await supabase.auth.signOut();
+		axios.post("/api/logout", {
+			options: { setMFAFalse: false },
+			userId: user.id,
+		});
 		dispatch(
 			setUser({
 				roles: [],

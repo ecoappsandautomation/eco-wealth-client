@@ -88,33 +88,20 @@ export default function Project({
 	const handleDelete = async () => {
 		if (!checkIfProjectIsDeletable()) return;
 		if (!fetchProject) return;
-		const deletedAt = new Date();
-		const { data, error } = await supabase
-			.from("projects")
-			.update({ is_deleted: true, status: "deleted", deleted_at: deletedAt })
-			.eq("id", project?.id)
-			.select();
-		if (error) {
-			console.error("Error deleting project:", error);
-			toast.error(error.message);
-		}
-		if (data) {
-			toast.success("Project deleted");
-			handleGoBack();
-		}
-		if (project?.type === "Tree") {
-			const { data, error } = await supabase
-				.from("tree_projects")
-				.update({ is_deleted: true, status: "deleted", deleted_at: deletedAt })
-				.eq("project_id", project?.id);
-		}
 
-		if (project?.type === "Energy") {
-			const { data, error } = await supabase
-				.from("energy_projects")
-				.update({ is_deleted: true, status: "deleted", deleted_at: deletedAt })
-				.eq("project_id", project?.id);
-		}
+		await axios
+			.delete(
+				`/api/projects?projectId=${project?.id}&projectType=${project?.type}`
+			)
+			.then((res) => {
+				toast.success("Project deleted");
+				fetchProject();
+				handleGoBack();
+			})
+			.catch((err) => {
+				console.log("error deleting project >>> ", err);
+				toast.error(err.message);
+			});
 	};
 	const checkIfProjectIsDeletable = () => {
 		if (

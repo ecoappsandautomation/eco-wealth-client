@@ -26,8 +26,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
 			status: 400,
 		});
 	}
-	// console.log("webhook event type >>> ", event.type);
-	// console.log("webhook event data object >>> ", event.data.object);
+
 	// Handle the checkout.session.completed event
 	if (event.type === "checkout.session.completed") {
 		const session = event.data.object as Stripe.Checkout.Session;
@@ -69,10 +68,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
 			homes_powered: metadata.homesPowered,
 			est_kwh_per_share: metadata.estKwhPerShare,
 		};
-		// console.log(
-		// 	"sending orderData to transaction_completion api route: ",
-		// 	orderData
-		// );
+
 		// here we are sending orderData to '/api/transaction_completion' to complete the transaction
 		await fetch(`${req.nextUrl.origin}/api/transaction_completion`, {
 			method: "POST",
@@ -84,9 +80,6 @@ export async function POST(req: NextRequest, res: NextResponse) {
 			}),
 		})
 			.then((res) => {
-				// console.log("res >>> ", res);
-				// console.log("res.data >>> ", res.json());
-				// console.log("res.status >>> ", res.status);
 				if (res.status === 200) {
 					return NextResponse.json(
 						{ message: "transaction completed." },

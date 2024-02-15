@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
+function capitalizeName(fullName: string): string {
+	if (!fullName) return "";
+	const names = fullName.split(" ");
 
+	const capitalizedNames = names.map((name) => {
+		return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+	});
+
+	return capitalizedNames.join(" ");
+}
 export async function GET(req: NextRequest, res: NextResponse) {
 	const cookieStore = cookies();
 	const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
@@ -14,7 +23,8 @@ export async function GET(req: NextRequest, res: NextResponse) {
 
 	// Function to check if the last name contains 'Test-'
 	const hasTestLastName = (name: string) => {
-		return name && name.split(" ").some((part) => part.startsWith("Test-"));
+		if (!name) return false;
+		return name && name?.split(" ").some((part) => part.startsWith("Test-"));
 	};
 
 	try {
@@ -23,6 +33,7 @@ export async function GET(req: NextRequest, res: NextResponse) {
 			.from("users")
 			.select("name, email, created_at")
 			.eq("is_verified", true)
+			.neq("name", null)
 			.order("created_at", { ascending: false })
 			.limit(5);
 
@@ -38,16 +49,21 @@ export async function GET(req: NextRequest, res: NextResponse) {
 			throw new Error(usersError?.message || waitingListError?.message);
 		}
 
-		// Combine, filter, and sort the data
+		// Refactored data combining, filtering, sorting, and slicing
 		const combinedData = [...usersData, ...waitingListData]
-			.filter((user) => !isTestEmail(user.email) && !hasTestLastName(user.name))
+			.filter(
+				(user) => !isTestEmail(user.email) && !hasTestLastName(user?.name)
+			)
 			.sort(
 				(a, b) =>
 					new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
 			)
-			.slice(0, 5);
+			.slice(0, 5)
+			.map((user) => ({
+				...user,
+				name: capitalizeName(user?.name),
+			}));
 
-		console.log("Most recent registrations: ", combinedData);
 		return NextResponse.json(combinedData, { status: 200 });
 	} catch (error) {
 		console.error("Error fetching data:", error);

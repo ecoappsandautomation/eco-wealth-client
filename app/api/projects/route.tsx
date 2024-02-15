@@ -9,8 +9,6 @@ export async function POST(req: any) {
 	const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 	try {
 		const { projectData, producerId } = await req.json();
-		console.log("projectData >>> ", projectData);
-		console.log("producerId >>> ", producerId);
 
 		// Here we check if there is a title, project type, project contact details, agreement accepted, and
 		// address of operation
@@ -88,7 +86,8 @@ export async function POST(req: any) {
 			.insert([
 				{
 					title: projectData.title,
-					image_url: projectData.imageUrl,
+					banner_url: projectData.bannerUrl,
+					image_urls: projectData.imageUrls,
 					project_coordinator_contact: projectData.projectCoordinatorContact,
 					description: projectData.description,
 					producer_id: producerId,
@@ -135,25 +134,45 @@ export async function POST(req: any) {
 		if (projectData.projectType === "Tree" && project) {
 			const fundsRequestedPerTree =
 				totalFundsRequested / projectData.treeTarget;
-
-			const { error } = await supabase.from("tree_projects").insert([
-				{
-					project_id: project?.[0].id,
-					tree_target: projectData.treeTarget,
-					funds_requested_per_tree: fundsRequestedPerTree,
-					project_type: projectData.treeProjectType,
-					tree_type: projectData.treeType,
-					tree_count: 0,
-					producer_id: producerId,
-					est_seed_cost: projectData.estSeedCost,
-					est_labour_cost: projectData.labourCost,
-					est_maintenance_cost_per_year: projectData.maintenanceCost,
-					est_planting_date: projectData.estPlantingDate,
-					est_maturity_date: projectData.estMaturityDate,
-				},
-			]);
-			if (error) {
-				return NextResponse.json({ error: error.message }, { status: 501 });
+			if (projectData.treeProjectType === "Restoration") {
+				const { error } = await supabase.from("tree_projects").insert([
+					{
+						project_id: project?.[0].id,
+						tree_target: projectData.treeTarget,
+						funds_requested_per_tree: fundsRequestedPerTree,
+						project_type: projectData.treeProjectType,
+						tree_type: projectData.treeType,
+						tree_count: 0,
+						producer_id: producerId,
+						est_seed_cost: projectData.estSeedCost,
+						est_labour_cost: projectData.labourCost,
+						est_maintenance_cost_per_year: projectData.maintenanceCost,
+						est_planting_date: projectData.estPlantingDate,
+					},
+				]);
+				if (error) {
+					return NextResponse.json({ error: error.message }, { status: 502 });
+				}
+			} else {
+				const { error } = await supabase.from("tree_projects").insert([
+					{
+						project_id: project?.[0].id,
+						tree_target: projectData.treeTarget,
+						funds_requested_per_tree: fundsRequestedPerTree,
+						project_type: projectData.treeProjectType,
+						tree_type: projectData.treeType,
+						tree_count: 0,
+						producer_id: producerId,
+						est_seed_cost: projectData.estSeedCost,
+						est_labour_cost: projectData.labourCost,
+						est_maintenance_cost_per_year: projectData.maintenanceCost,
+						est_planting_date: projectData.estPlantingDate,
+						est_maturity_date: projectData.estMaturityDate,
+					},
+				]);
+				if (error) {
+					return NextResponse.json({ error: error.message }, { status: 502 });
+				}
 			}
 		}
 
@@ -349,4 +368,46 @@ export async function PUT(req: NextRequest, res: NextResponse) {
 	}
 
 	return NextResponse.json({ message: "Project updated successfully" });
+}
+
+export async function DELETE(req: NextRequest, res: NextResponse) {
+	const cookieStore = cookies();
+	const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+	const { searchParams } = new URL(req.url);
+	const projectId = searchParams.get("projectId");
+	const projectType = searchParams.get("projectId");
+
+	const deletedAt = new Date();
+	const { error } = await supabase
+		.from("projects")
+		.update({ is_deleted: true, status: "deleted", deleted_at: deletedAt })
+		.eq("id", projectId)
+		.select();
+	if (error) {
+		console.error("Error deleting project:", error);
+		return NextResponse.json({ error: error.message }, { status: 500 });
+	}
+	if (projectType === "Tree") {
+		const { error } = await supabase
+			.from("tree_projects")
+			.update({ is_deleted: true, status: "deleted", deleted_at: deletedAt })
+			.eq("project_id", projectId);
+		if (error) {
+			console.error("Error deleting tree project:", error);
+			return NextResponse.json({ error: error.message }, { status: 500 });
+		}
+		return NextResponse.json({ message: "Project deleted successfully" });
+	}
+
+	if (projectType === "Energy") {
+		const { error } = await supabase
+			.from("energy_projects")
+			.update({ is_deleted: true, status: "deleted", deleted_at: deletedAt })
+			.eq("project_id", projectId);
+		if (error) {
+			console.error("Error deleting energy project:", error);
+			return NextResponse.json({ error: error.message }, { status: 500 });
+		}
+		return NextResponse.json({ message: "Project deleted successfully" });
+	}
 }

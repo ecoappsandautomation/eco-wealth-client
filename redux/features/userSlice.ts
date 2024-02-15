@@ -23,6 +23,7 @@ const initialState: UserState = {
 	mfaEnabled: false,
 	mfaVerified: false,
 	mfaVerifiedAt: "",
+	mfaFrequency: "",
 	loadingUser: true,
 };
 
@@ -65,6 +66,8 @@ export const userSlice = createSlice({
 				state.mfaVerifiedAt = userData.mfaVerifiedAt;
 			if (userData.mfaEnabled !== undefined)
 				state.mfaEnabled = userData.mfaEnabled;
+			if (userData.mfaFrequency !== undefined)
+				state.mfaFrequency = userData.mfaFrequency;
 			if (userData.loadingUser !== undefined)
 				state.loadingUser = userData.loadingUser;
 		},

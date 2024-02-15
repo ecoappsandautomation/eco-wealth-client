@@ -65,8 +65,8 @@ function ProducerAddresses({ user }: Props) {
 		setLoading(true);
 		const res = await axios.get(`/api/properties?producerId=${producerId}`);
 		const data = await res.data;
-		const propertyData = convertToCamelCase(data.propertyData);
-		setProperties(convertToCamelCase(propertyData) as Property[]);
+		console.log("data >>> ", data.data);
+		setProperties(convertToCamelCase(data.data) as Property[]);
 		setLoading(false);
 	}
 
@@ -78,7 +78,6 @@ function ProducerAddresses({ user }: Props) {
 				address: newAddressDetails,
 			})
 			.then((res) => {
-				console.log("res >>> ", res);
 				if (!properties) {
 					setProperties([convertToCamelCase(res.data[0])]);
 				} else {
@@ -131,7 +130,6 @@ function ProducerAddresses({ user }: Props) {
 				producerId: producerId,
 			})
 			.then((res) => {
-				console.log("res >>> ", res);
 				setProperties((prev) =>
 					prev.map((address) =>
 						address.id === addressId
@@ -190,7 +188,6 @@ function ProducerAddresses({ user }: Props) {
 		await axios
 			.delete(`/api/properties?addressId=${addressId}&producerId=${producerId}`)
 			.then((res) => {
-				console.log("res >>> ", res);
 				setProperties((prev) =>
 					prev.filter((address) => address.id !== addressId)
 				);
@@ -328,6 +325,7 @@ function ProducerAddresses({ user }: Props) {
 
 			<h2 className='text-gray-400 mt-4'>Your Addresses:</h2>
 			{properties &&
+				properties.length > 0 &&
 				properties.map(({ id, address, isVerified }) => (
 					<div
 						key={id}

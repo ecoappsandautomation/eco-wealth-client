@@ -13,7 +13,8 @@ import InvestorOnboardingSubmit from "./InvestorOnboardingSubmit";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { v4 as uuidv4 } from "uuid";
-
+import axios from "axios";
+import DOMPurify from "dompurify";
 export default function InvestorOnboarding() {
 	const [investmentGoals, setInvestmentGoals] = useState<string[]>([]);
 	const [otherInvestmentGoal, setOtherInvestmentGoal] = useState("");
@@ -23,22 +24,23 @@ export default function InvestorOnboarding() {
 
 	const router = useRouter();
 
+	// Redirect returning user to dashboard if onboarding is complete
+	useEffect(() => {
+		if (user.investorOnboardingComplete) {
+			router.push("/i/dashboard");
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [user.investorOnboardingComplete]);
 	// redundant id check to prevent no investor user profile from not being created
 	const createInvestorProfile = async () => {
-		const { data, error } = await supabase
-			.from("investors")
-			.insert([
-				{
-					user_id: user.id,
-				},
-			])
-			.select();
-		if (error) {
-			console.error("Error inserting investor:", error.message);
-		}
-		if (data) {
-			dispatch(setUser({ ...user, investorId: data[0].id }));
-		}
+		await axios
+			.post("/api/investor/create", { userId: user.id })
+			.then((res) => {
+				dispatch(setUser({ ...user, investorId: res.data.id }));
+			})
+			.catch((error) => {
+				console.error("Error inserting investor:", error.message);
+			});
 	};
 
 	useEffect(() => {
@@ -182,27 +184,6 @@ export default function InvestorOnboarding() {
 		setInvestmentRiskAgreement(e.target.value);
 	};
 
-	// As the onboarding data is submitted, we update the investor's onboarding status
-	// along with the onboarding_survey id that's related to the investor_onboarding table in supabase.
-	const handleUpdateInvestorOnboardingStatus = async (onboardingId: string) => {
-		const { data, error } = await supabase
-			.from("investors")
-			.update({
-				onboarding_complete: true,
-				onboarding_id: onboardingId,
-			})
-			.eq("user_id", user.id);
-		if (error) {
-			console.error("Error updating investor onboarding status:", error);
-			toast.error(
-				`Error updating investor onboarding status: ${error.message}`
-			);
-			return;
-		}
-
-		dispatch(setUser({ ...user, investorOnboardingComplete: true }));
-	};
-
 	// Here we submit the onboarding survey data to supabase.
 	// TODO: Convert to redux.
 	const handleUpdateInvestorOnboardingData = async () => {
@@ -214,38 +195,37 @@ export default function InvestorOnboarding() {
 		if (otherInvestmentImpact !== "") {
 			allImpact = [...investmentImpact, otherInvestmentImpact];
 		}
-		console.log(
-			`allGoals: ${allGoals}, allImpact ${allImpact}, user: ${user.id}, accreditedInvestor: ${accreditedInvestor}, investmentRiskAgreement: ${investmentRiskAgreement},
-			investmentSector: ${investmentSectors}, investmentRegions: ${investmentRegions}, investmentFluctuations: ${investmentFluctuations}, timeHorizon: ${timeHorizon}, riskTolerance: ${riskTolerance}, preferredTreeTypes: ${preferredTreeTypes}, preferredEnergyTypes: ${preferredEnergyTypes}
-			`
-		);
-		const { data, error } = await supabase
-			.from("investor_onboarding")
-			.insert([
-				{
-					id: uuidv4(),
-					user_id: user.id,
-					goals: allGoals,
-					sectors: investmentSectors,
-					renewable_energy_preferences: preferredEnergyTypes,
-					tree_preferences: preferredTreeTypes,
-					risk_tolerance: riskTolerance,
-					time_horizon: timeHorizon,
-					okay_with_investment_fluctuations: investmentFluctuations,
-					impact: allImpact,
-					regions: investmentRegions,
-					is_accredited_investor: accreditedInvestor,
-					agreed_to_risk: investmentRiskAgreement,
-				},
-			])
-			.select();
-		if (error) {
-			console.error("Error updating investor onboarding data:", error);
-			toast.error(`Error updating investor onboarding data: ${error.message}`);
-		}
-		if (data) {
-			handleUpdateInvestorOnboardingStatus(data[0].id);
-		}
+
+		const investorOnboardingData = {
+			id: uuidv4(),
+			user_id: user.id,
+			goals: allGoals,
+			sectors: investmentSectors,
+			renewable_energy_preferences: preferredEnergyTypes,
+			tree_preferences: preferredTreeTypes,
+			risk_tolerance: riskTolerance,
+			time_horizon: timeHorizon,
+			okay_with_investment_fluctuations: investmentFluctuations,
+			impact: allImpact,
+			regions: investmentRegions,
+			is_accredited_investor: accreditedInvestor,
+			agreed_to_risk: investmentRiskAgreement,
+		};
+		await axios
+			.post("/api/onboard/investor", {
+				investorOnboardingData,
+				userId: user.id,
+			})
+			.then((res) => {
+				console.log("Investor onboarding data submitted successfully", res);
+				dispatch(setUser({ ...user, investorOnboardingComplete: true }));
+			})
+			.catch((error) => {
+				console.error("Error updating investor onboarding data:", error);
+				toast.error(
+					`Error updating investor onboarding data: ${error.message}`
+				);
+			});
 	};
 
 	// Here we manage the view of the onboarding steps.

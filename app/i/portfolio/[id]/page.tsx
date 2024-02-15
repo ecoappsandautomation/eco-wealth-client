@@ -29,11 +29,9 @@ function PortfolioProject({}: Props) {
 			)
 			.then((res) => {
 				setLoading(false);
-				console.log("res.data >>> ", res.data);
 				setProject(convertToCamelCase(res.data.data));
 				setTotalAmountInvested(res.data.totalAmountInvested);
 				setTotalShares(res.data.totalShares);
-				console.log;
 				setPercentageFunded(res.data.percentageFunded);
 			})
 			.catch((err) => {
@@ -42,7 +40,6 @@ function PortfolioProject({}: Props) {
 			});
 	};
 	useEffect(() => {
-		console.log("projectId >>> ", projectId);
 		if (projectId && user) {
 			fetchProject();
 		}

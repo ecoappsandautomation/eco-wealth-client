@@ -40,8 +40,6 @@ export async function POST(req: NextRequest, res: NextResponse) {
 		console.log("transaction error >>> ", error);
 		return NextResponse.json({ message: error.message }, { status: 501 });
 	}
-	// console.log("transaction data >>> ", data);
-	console.log("orderData.project_type >>> ", orderData.project_type);
 	const transactionData = data && data[0];
 	const { data: projectFinancialsData, error: projectFinancialsError } =
 		await supabase
@@ -75,9 +73,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
 			{ status: 502 }
 		);
 	}
-	console.log("totalAmountRaised  >>> ", totalAmountRaised);
-	console.log("totalRaised >>> ", totalRaised);
-	console.log("totalNumOfSharesSold >>> ", totalNumOfSharesSold);
+
 	await supabase
 		.from("project_financials")
 		.update({
@@ -153,7 +149,6 @@ export async function POST(req: NextRequest, res: NextResponse) {
 				updated_at: new Date(),
 			};
 
-			console.log("updateData >>> ", updateData);
 			const { error } = await supabase
 				.from("energy_investments")
 				.update(updateData)
@@ -199,7 +194,6 @@ export async function POST(req: NextRequest, res: NextResponse) {
 			.select("*")
 			.eq("investor_id", orderData.investor_id);
 
-		console.log("metricsData >>> ", metricsData);
 		if (metricsError || metricsData.length === 0) {
 			console.log("metricsError >>> ", metricsError);
 			//
@@ -227,26 +221,11 @@ export async function POST(req: NextRequest, res: NextResponse) {
 			const totalEstKwhContributedPerYear =
 				parseInt(orderData.kwh_contributed_per_year) +
 				parseInt(metricsData[0].total_est_kwh_contributed_per_year);
-			console.log(
-				"total arrays installed from order >> ",
-				orderData.total_arrays_installed
-			);
-			console.log(
-				"total arrays installed from metrics >> ",
-				metricsData[0].total_arrays_installed
-			);
+
 			const totalArraysInstalled =
 				parseInt(orderData.total_arrays_installed) +
 				parseInt(metricsData[0].total_arrays_installed);
 
-			console.log(
-				"total homes powered from order >> ",
-				orderData.homes_powered
-			);
-			console.log(
-				"total homes powered from metrics >> ",
-				metricsData[0].total_homes_powered
-			);
 			const totalHomesPowered =
 				parseInt(orderData.homes_powered) +
 				parseInt(metricsData[0].total_homes_powered);
@@ -317,7 +296,6 @@ export async function POST(req: NextRequest, res: NextResponse) {
 					{ status: 502 }
 				);
 			}
-			console.log("investorCountData >>> ", investorCountData);
 			const { error: producerMetricsUpdateError } = await supabase
 				.from("producer_metrics")
 				.update({
@@ -413,7 +391,6 @@ export async function POST(req: NextRequest, res: NextResponse) {
 				est_return_per_year_after_repayment: newEstReturnPerYearAfterRepayment,
 				updated_at: new Date(),
 			};
-			console.log("updateData >>> ", updateData);
 			const { error } = await supabase
 				.from("tree_investments")
 				.update(updateData)
@@ -442,10 +419,6 @@ export async function POST(req: NextRequest, res: NextResponse) {
 				console.log("error inserting tree investment data >>> ", error);
 				return NextResponse.json({ message: error }, { status: 502 });
 			}
-			console.log(
-				"orderData.trees_contributed >>> ",
-				orderData.trees_contributed
-			);
 		}
 
 		//
@@ -454,7 +427,6 @@ export async function POST(req: NextRequest, res: NextResponse) {
 			.from("investor_metrics")
 			.select("*")
 			.eq("investor_id", orderData.investor_id);
-		console.log("metricsData.length >>> ", metricsData?.length);
 		console.log("metricsError >>> ", metricsError);
 		if (metricsError) {
 			console.log("metricsError >>> ", metricsError);

@@ -62,6 +62,20 @@ export default function WaitingListMobileMenu({}: Props) {
 					>
 						Join the waiting list today
 					</a>
+					<a
+						href='/login'
+						className='p-4'
+						onClick={() => setIsMenuOpen(false)}
+					>
+						Login
+					</a>
+					<a
+						href='/signup'
+						className='p-4'
+						onClick={() => setIsMenuOpen(false)}
+					>
+						Signup
+					</a>
 				</div>
 			)}
 		</div>

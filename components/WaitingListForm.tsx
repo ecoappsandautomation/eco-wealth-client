@@ -5,24 +5,53 @@ import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import { BiLock } from "react-icons/bi";
 import Logo from "./Logo";
-
+import handleReferralId from "@/utils/handleReferralId";
+import ReCAPTCHA from "react-google-recaptcha";
+import validator from "validator";
+import DOMPurify from "dompurify";
 function WaitingListForm() {
 	const [name, setName] = useState("");
 	const [email, setEmail] = useState("");
 	const [emailError, setEmailError] = useState("");
 	const [referralSource, setReferralSource] = useState("");
 	const [referrer, setReferrer] = useState("");
+	const [specificReferral, setSpecificReferral] = useState("");
 	const [isFormValid, setIsFormValid] = useState(false);
 	const searchParams = useSearchParams();
 	const ref = searchParams?.get("r");
-	const [specificReferral, setSpecificReferral] = useState("");
-	useEffect(() => {
-		if (ref) {
-			setReferrer(ref);
-			setReferralSource("Friend/Someone referred");
+	const [captcha, setCaptcha] = useState<string | null>("");
+	const RECAPTCHA_SITE_KEY = process.env.recaptcha_site_key;
+	const handleCheckReferral = () => {
+		if (typeof window !== "undefined") {
+			// The code now runs only on the client side
+
+			if (ref) {
+				setReferralSource("Friend/Someone referred");
+				handleExistingReferral(ref);
+				return;
+			} else {
+				const storedData = localStorage.getItem("referralData");
+				if (!storedData) return;
+				const { referralId } = JSON.parse(storedData as string);
+				setReferralSource("Friend/Someone referred");
+				handleExistingReferral(referralId);
+			}
 		}
+	};
+
+	// Check if referralId is present in URL or localStorage
+	useEffect(() => {
+		// Check if referralId is present in URL
+		handleCheckReferral();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [ref]);
 
+	// Check if referralId is present in localStorage
+	const handleExistingReferral = async (referralId: string) => {
+		await handleReferralId(referralId, setReferrer);
+	};
+
+	// Handle referral source change
 	const handleReferralChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
 		setReferralSource(e.target.value);
 		setSpecificReferral(""); // Reset specific referral if the referral source is changed
@@ -30,6 +59,8 @@ function WaitingListForm() {
 			setReferrer("");
 		}
 	};
+
+	// Render specific referral input based on referral source
 	const renderSpecificReferralInput = () => {
 		if (referralSource === "Friend/Someone referred") {
 			return (
@@ -75,46 +106,101 @@ function WaitingListForm() {
 		}
 	};
 	const router = useRouter();
+	const getReferralId = () => {
+		const storedData = localStorage.getItem("referralData");
+		if (!storedData) return null;
+		const { referralId } = JSON.parse(storedData as string);
+		return referralId;
+	};
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!isEmailValid(email)) {
+		// Validate email
+		console.log("submitting...");
+		if (!validator.isEmail(email)) {
 			setEmailError("Invalid email address");
 			return;
 		}
 		setEmailError("");
 
-		// TODO: Integrate with Supabase here
-		axios
-			.post("/api/waiting_list", {
-				name,
-				email,
-				referralSource,
-				referrer,
-				specificReferral,
-			})
-			.then((res) => {
-				router.push(`/thank-you-for-registering?name=${name}&email=${email}`);
-			})
-			.catch((err) => {
-				console.log("/api/waiting_list >> err", err);
-			});
+		// Check if referralId is present in URL or localStorage;
+		const referralId = getReferralId();
+		if (!name || !email || !captcha) return;
+		// Send form data to the server
+		const sanitizedName = DOMPurify.sanitize(name);
+		const sanitizedEmail = DOMPurify.sanitize(email);
+		const sanitizedReferralSource = DOMPurify.sanitize(referralSource);
+		const sanitizedReferrer = DOMPurify.sanitize(referrer);
+		const sanitizedSpecificReferral = DOMPurify.sanitize(specificReferral);
+		if (!referralId) {
+			// Send form data to the server
+			if (referralSource !== "") {
+				axios
+					.post("/api/waiting_list", {
+						name: sanitizedName,
+						email: sanitizedEmail,
+						referralSource: sanitizedReferralSource,
+						specificReferral:
+							sanitizedReferrer !== ""
+								? sanitizedReferrer
+								: sanitizedSpecificReferral,
+					})
+					.then((res) => {
+						router.push(
+							`/thank-you-for-registering?name=${sanitizedName}&email=${sanitizedEmail}`
+						);
+					})
+					.catch((err) => {
+						console.log("/api/waiting_list >> err", err);
+					});
+			} else {
+				axios
+					.post("/api/waiting_list", {
+						name: sanitizedName,
+						email: sanitizedEmail,
+					})
+					.then((res) => {
+						router.push(
+							`/thank-you-for-registering?name=${sanitizedName}&email=${sanitizedEmail}`
+						);
+					})
+					.catch((err) => {
+						console.log("/api/waiting_list >> err", err);
+					});
+			}
+		} else {
+			axios
+				.post("/api/waiting_list", {
+					name: sanitizedName,
+					email: sanitizedEmail,
+					referralSource: sanitizedReferralSource,
+					referrer: referralId,
+					specificReferral:
+						sanitizedReferrer !== ""
+							? sanitizedReferrer
+							: sanitizedSpecificReferral,
+				})
+				.then((res) => {
+					router.push(
+						`/thank-you-for-registering?name=${sanitizedName}&email=${sanitizedEmail}`
+					);
+				})
+				.catch((err) => {
+					console.log("/api/waiting_list >> err", err);
+				});
+		}
 	};
-	const handleReturnHome = () => {
-		router.push("/");
-	};
+
 	useEffect(() => {
 		// Check if all required fields are filled and valid
-		const isReferralValid =
-			referralSource === "Friend/Someone referred"
-				? referrer.trim() !== ""
-				: specificReferral.trim() !== "";
 		const isValid =
 			name.trim() !== "" &&
 			isEmailValid(email) &&
-			referralSource.trim() !== "" &&
-			isReferralValid;
+			captcha !== null &&
+			captcha !== "" &&
+			captcha !== undefined;
+		// Add reCaptcha validation here
 		setIsFormValid(isValid);
-	}, [name, email, referralSource, referrer, specificReferral]);
+	}, [name, email, referralSource, referrer, specificReferral, captcha]);
 	return (
 		<form
 			onSubmit={handleSubmit}
@@ -169,7 +255,11 @@ function WaitingListForm() {
 
 			{/* Conditional text input for referrer */}
 			{renderSpecificReferralInput()}
-
+			<ReCAPTCHA
+				sitekey={RECAPTCHA_SITE_KEY!}
+				onChange={setCaptcha}
+				className='rounded-md mx-auto mt-2'
+			/>
 			<button
 				className={
 					isFormValid

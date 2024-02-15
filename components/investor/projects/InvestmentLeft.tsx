@@ -34,7 +34,7 @@ export default function InvestmentLeft({
 			<span className='flex justify-center mb-2'>
 				{!matches ? (
 					<Image
-						width={400}
+						width={600}
 						height={150}
 						src={imageUrl}
 						alt={title}

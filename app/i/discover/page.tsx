@@ -101,7 +101,6 @@ function Discover() {
 
 		fetchProjects(activeFilter, nonProfitFilter);
 	}, [activeFilter, nonProfitFilter]);
-	console.log("hi ", user.name?.substring(0, user.name.indexOf(" ")));
 	// Here we handle the filter click by pushing the filter type to the url
 	const handleFilterClick = (e: any) => {
 		const filterType = e.target.value;
@@ -134,13 +133,13 @@ function Discover() {
 	};
 
 	return (
-		<div className='w-[90%] lg:w-3/4 mx-auto py-8 h-[100%]'>
+		<div className='w-[90%] xl:w-[90vw] mx-auto py-8 h-[100%]'>
 			<h1 className='text-2xl font-bold'>Discover Projects</h1>
 			<h2 className='font-light text-lg mb-8'>
 				Instantly find tree-based agriculture and renewable energy projects to
 				invest into.
 			</h2>
-			<div className='flex flex-wrap gap-2  mb-8'>
+			<div className='flex flex-wrap gap-2 mb-8'>
 				{filters.map((item, index) => (
 					<button
 						key={index}

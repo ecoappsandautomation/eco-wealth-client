@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import { supabaseClient as supabase } from "@/utils/supabaseClient";
 import { setUser } from "@/redux/features/userSlice";
 import { useAppDispatch } from "@/redux/hooks";
+import axios from "axios";
 
 type Props = {
 	user: UserState;
@@ -15,59 +16,25 @@ export default function Roles({ user }: Props) {
 
 	const handleActivateRole = async (role: string) => {
 		setLoading(true);
-		try {
-			// Add the new role to the user's roles array
-			const newRoles = [...user.roles, role.toLowerCase()];
 
-			// Update the user's roles in Supabase
-			const { data, error } = await supabase
-				.from("users")
-				.update({ roles: newRoles })
-				.eq("id", user.id)
-				.select();
+		// Add the new role to the user's roles array
+		const newRoles = [...user.roles, role.toLowerCase()];
 
-			if (error)
-				return console.log("Error updating user roles:", error.message);
-
-			if (data) {
+		await axios
+			.post("/api/settings/roles", { roles: newRoles, userId: user.id, role })
+			.then((res) => {
+				console.log(res.data);
 				dispatch(setUser({ ...user, roles: newRoles }));
-				if (role === "investor") {
-					const { data, error } = await supabase
-						.from("investors")
-						.insert([
-							{
-								user_id: user.id,
-							},
-						])
-						.select();
-					if (error) {
-						console.error("Error inserting investor:", error.message);
-					}
-					router.push("/i/onboarding");
-				}
+				if (role === "investor") router.push("/i/onboarding");
+				if (role === "producer") router.push("/p/onboarding");
+				setLoading(false);
+			})
+			.catch((error) => {
+				setLoading(false);
+				console.log("Error updating user roles:", error.message);
+			});
 
-				if (role === "producer") {
-					const { data, error } = await supabase
-						.from("producers")
-						.insert([
-							{
-								user_id: user.id,
-							},
-						])
-						.select();
-					if (error) {
-						console.error("Error inserting producer:", error.message);
-					}
-					router.push("/p/onboarding");
-				}
-			}
-
-			// Redirect the user to the onboarding section for their new role
-		} catch (error) {
-			console.error("Error activating role:", error);
-		} finally {
-			setLoading(false);
-		}
+		// Redirect the user to the onboarding section for their new role
 	};
 	return (
 		<div className='md:w-[80%]'>
@@ -75,9 +42,8 @@ export default function Roles({ user }: Props) {
 			{["Investor", "Producer"].map((role) => {
 				const isActive = user.roles.includes(role.toLowerCase());
 				return (
-					<>
+					<div key={role}>
 						<div
-							key={role}
 							className={
 								isActive
 									? "flex items-center justify-between mb-4 border-[var(--cta-one)] border-2 py-4 px-6 rounded-md"
@@ -105,7 +71,7 @@ export default function Roles({ user }: Props) {
 								</button>
 							)}
 						</div>
-					</>
+					</div>
 				);
 			})}
 		</div>

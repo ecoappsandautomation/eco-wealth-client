@@ -1,17 +1,15 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { AiFillHeart, AiOutlineHeart } from "react-icons/ai";
+// import { AiFillHeart, AiOutlineHeart } from "react-icons/ai";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import Link from "next/link";
 import moment from "moment";
-import { supabaseClient as supabase } from "@/utils/supabaseClient";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/redux/hooks";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Image from "next/image";
-import getBasePath from "@/lib/getBasePath";
 import axios from "axios";
 import { IoCheckmarkCircle } from "react-icons/io5";
 import { MdOutlineError } from "react-icons/md";
@@ -43,7 +41,7 @@ const ProjectCard = ({
 	const {
 		title,
 		description,
-		imageUrl,
+		bannerUrl,
 		id,
 		status,
 		type,
@@ -56,8 +54,8 @@ const ProjectCard = ({
 		projectFinancials,
 	} = project;
 	const projectId = id;
-	const [isFavorited, setIsFavorited] = useState(false);
-	const [isFavIconHovered, setIsFavIconHovered] = useState(false);
+	// const [isFavorited, setIsFavorited] = useState(false);
+	// const [isFavIconHovered, setIsFavIconHovered] = useState(false);
 
 	const [menuOpen, setMenuOpen] = useState(false);
 	const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -69,72 +67,62 @@ const ProjectCard = ({
 		setAnchorEl(null);
 	};
 	const router = useRouter();
-	const [favoriteCount, setFavoriteCount] = useState<number>(0);
+	// const [favoriteCount, setFavoriteCount] = useState<number>(0);
 
 	const user = useAppSelector((state) => state.user);
 
 	// Toggles the favorite status of the project
-	const toggleFavorite = async (event: React.MouseEvent) => {
-		event.stopPropagation();
-		setIsFavorited(!isFavorited);
-		if (isFavorited) {
-			// Delete a favorite
-			const { data: favorite, error } = await supabase
-				.from("favorites")
-				.delete()
-				.eq("user_id", user.id)
-				.eq("project_id", projectId);
-			if (error) {
-				return toast.error(error.message);
-			}
-			setFavoriteCount(favoriteCount - 1);
-			toast.success("Removed from favorites");
-		} else {
-			// Add a favorite
-			const { data: favorite, error } = await supabase
-				.from("favorites")
-				.insert([{ user_id: user.id, project_id: projectId }]);
-			if (error) {
-				return toast.error(error.message);
-			}
-			setFavoriteCount(favoriteCount + 1);
-			toast.success("Added to favorites");
-		}
-	};
+	// const toggleFavorite = async (event: React.MouseEvent) => {
+	// 	event.stopPropagation();
+	// 	setIsFavorited(!isFavorited);
+	// 	if (isFavorited) {
+	// 		// Delete a favorite
+	// 		await axios
+	// 			.delete(
+	// 				`/api/project/favorite?projectId=${projectId}&userId=${user.id}`
+	// 			)
+	// 			.then((res) => {
+	// 				if (res.data) {
+	// 					setFavoriteCount(favoriteCount - 1);
+	// 					toast.success("Removed from favorites");
+	// 				}
+	// 			})
+	// 			.catch((error) => {
+	// 				toast.error(error.message);
+	// 			});
+	// 	} else {
+	// 		// Add a favorite
+	// 		await axios
+	// 			.post("/api/project/favorite", { projectId, userId: user.id })
+	// 			.then((res) => {
+	// 				if (res.data) {
+	// 					setFavoriteCount(favoriteCount + 1);
+	// 					toast.success("Added to favorites");
+	// 				}
+	// 			})
+	// 			.catch((error) => {
+	// 				toast.error(error.message);
+	// 			});
+	// 	}
+	// };
 
-	useEffect(() => {
-		// Check if the project is favorited
-		const checkFavorite = async () => {
-			const { data: favorites, error } = await supabase
-				.from("favorites")
-				.select("project_id")
-				.eq("user_id", user.id)
-				.eq("project_id", projectId);
-			if (error) {
-				return console.log(error.message);
-			}
-			if (favorites.length > 0) {
-				setIsFavorited(true);
-			}
-		};
-		const checkFavoriteCount = async () => {
-			// Get the number of favorites for a project
-			const { count, error } = await supabase
-				.from("favorites")
-				.select("*", { count: "exact" })
-				.eq("project_id", projectId);
-			if (error) {
-				return console.log(error.message);
-			}
-			if (count) {
-				setFavoriteCount(count);
-			}
-		};
-		if (user.id) {
-			checkFavorite();
-			checkFavoriteCount();
-		}
-	}, [projectId, user.id]);
+	// useEffect(() => {
+	// 	// Check if the project is favorited
+	// 	const checkFavorite = async () => {
+	// 		await axios
+	// 			.get(`/api/project/favorite?projectId=${projectId}&userId=${user.id}`)
+	// 			.then((res) => {
+	// 				if (res.data.favorited) {
+	// 					setIsFavorited(true);
+	// 				}
+	// 				setFavoriteCount(res.data.count);
+	// 			})
+	// 			.catch((error) => {
+	// 				toast.error(error.message);
+	// 			});
+	// 	};
+	// 	checkFavorite();
+	// }, [projectId, user.id]);
 
 	// Opens the edit project page
 	const handleEdit = () => {
@@ -196,7 +184,7 @@ const ProjectCard = ({
 	if (role === "investor" && !isVerified) return null;
 	if (role === "investor" && status === "published")
 		return (
-			<div className='mb-8 lg:w-[308px] w-[408px]  bg-transparent rounded-2xl shadow-md relative md:mr-4 z-10 h-fit  '>
+			<div className='mb-8 md:w-[300px] w-[408px]  bg-transparent rounded-2xl shadow-md relative md:mr-4 z-10 h-fit  '>
 				<a className='block text-inherit no-underline'>
 					<Link
 						href={`/i/projects/${projectId}`}
@@ -208,7 +196,7 @@ const ProjectCard = ({
 								width={288}
 								height={150}
 								className='w-full h-48 object-cover rounded-2xl relative'
-								src={imageUrl}
+								src={bannerUrl}
 								alt={title}
 							/>
 							<div className='absolute inset-2 flex z-10 justify-end h-12 w-[95%]'>
@@ -435,7 +423,7 @@ const ProjectCard = ({
 							<Image
 								width={288}
 								height={150}
-								src={imageUrl}
+								src={bannerUrl}
 								alt={title}
 								className='w-full h-48 object-cover rounded-2xl relative'
 							/>

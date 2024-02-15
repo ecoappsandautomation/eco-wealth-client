@@ -24,6 +24,7 @@ export async function GET(req: NextRequest, res: NextResponse) {
 		const { data: usersData } = await supabase
 			.from("users")
 			.select("email, name")
+			.neq("name", null)
 			.eq("is_verified", true);
 
 		// Fetch users from the "waiting_list" table

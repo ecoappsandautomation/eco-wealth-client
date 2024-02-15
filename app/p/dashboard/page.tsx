@@ -169,7 +169,6 @@ const Dashboard: React.FC<DashboardProps> = () => {
 	useEffect(() => {
 		const baseDuration = 2000;
 		if (!metricData?.data) return;
-		console.log("metricData >>> ", metricData);
 		animateValue(
 			"numOfInvestors",
 			0,
@@ -290,7 +289,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
 				</div>
 			)}
 			<div className='w-3/4 text-sm md:text-base mx-auto border border-[var(--cta-one)] rounded-lg py-2 md:p-8 text-center'>
-				<div className='grid grid-cols-3 gap-2 md:gap-8'>
+				<div className='grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 p-4'>
 					<div className='flex flex-col items-center py-2 px-4 hover:border-white rounded-md  transition-all hover:bg-green-50 hover:bg-opacity-5'>
 						<p className='md:mb-2 text-gray-400'>Number of Investors</p>
 						<h2 className='mt-0'>{numOfInvestors?.toLocaleString("en-CA")}</h2>
@@ -328,7 +327,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
 					</div>
 				</div>
 				<hr className='my-2 border-[var(--cta-one)]' />
-				<div className='grid grid-cols-3  gap-4 md:gap-8'>
+				<div className='grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 p-4'>
 					<div className='flex flex-col items-center py-2 px-4 hover:border-white rounded-md  transition-all hover:bg-green-50 hover:bg-opacity-5'>
 						<p className='md:mb-2 text-gray-400'>You&apos;ve Generated:</p>
 						<h2 className='mt-0'>

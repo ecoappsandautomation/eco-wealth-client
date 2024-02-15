@@ -5,7 +5,7 @@ type Props = {};
 export default function Pricing({}: Props) {
 	return (
 		<>
-			<hr className='border-green-400' />
+			<hr className='border-green-900' />
 			<div
 				id='pricing'
 				className='pt-[100px] px-[64px]'

@@ -13,6 +13,8 @@ import {
 	MdSettings,
 	MdContactSupport,
 	MdBugReport,
+	MdGroupAdd,
+	MdUpdate,
 } from "react-icons/md";
 import { AiOutlineUserSwitch } from "react-icons/ai";
 import Link from "next/link";
@@ -22,6 +24,8 @@ import Logo from "./Logo";
 import { useMediaQuery } from "@mui/material";
 import { FaFolder, FaGraduationCap, FaHome } from "react-icons/fa";
 import { RiCompassDiscoverFill } from "react-icons/ri";
+import { BASE_URL } from "@/constants";
+import axios from "axios";
 type Props = {};
 
 const Header = ({}: Props) => {
@@ -113,62 +117,70 @@ const Header = ({}: Props) => {
 	// Logout logic
 	const handleLogoutClick = async () => {
 		// Handle logout logic here
-		await supabase.auth.signOut();
-		dispatch(
-			setUser({
-				roles: [""],
-				loggedIn: false,
-				id: "",
-				producerId: "",
-				investorId: "",
-				activeRole: "",
-				currentTheme: "dark",
-				email: "",
-				name: "",
-				phoneNumber: "",
-				isVerified: false,
-				totalUserTreeCount: 0,
-				userTreeCount: 0,
-				onboardingComplete: false,
-				investorOnboardingComplete: false,
-				producerOnboardingComplete: false,
-				emailNotification: false,
-				smsNotification: false,
-				pushNotification: false,
-				mfaEnabled: false,
-				mfaVerified: false,
-				mfaVerifiedAt: "",
-				loadingUser: true,
+		axios
+			.post("/api/logout", {
+				options: {
+					setMFAFalse: true,
+				},
+				userId: user.id,
 			})
-		);
-		await supabase
-			.from("users")
-			.update({
-				mfa_verified: false,
+			.then(() => {
+				console.log("User logged out");
+				dispatch(
+					setUser({
+						roles: [""],
+						loggedIn: false,
+						id: "",
+						producerId: "",
+						investorId: "",
+						activeRole: "",
+						currentTheme: "dark",
+						email: "",
+						name: "",
+						phoneNumber: "",
+						isVerified: false,
+						totalUserTreeCount: 0,
+						userTreeCount: 0,
+						onboardingComplete: false,
+						investorOnboardingComplete: false,
+						producerOnboardingComplete: false,
+						emailNotification: false,
+						smsNotification: false,
+						pushNotification: false,
+						mfaEnabled: false,
+						mfaVerified: false,
+						mfaVerifiedAt: "",
+						loadingUser: true,
+					})
+				);
+
+				router.push("/login");
+				router.refresh();
 			})
-			.eq("id", user.id);
-		router.push("/login");
-		router.refresh();
+			.catch((err) => {
+				console.log("Error logging out user", err);
+			});
 	};
 	const handleUpdateTheme = async (theme: string) => {
-		const { data, error } = await supabase
-			.from("users")
-			.update({ current_theme: theme })
-			.eq("id", user?.id);
-		if (error) {
-			console.error("Error updating user theme:", error.message);
-		}
-		if (data) {
-			dispatch(setUser({ ...user, currentTheme: theme }));
-			// Apply or remove the 'dark' class to the root HTML element
-			if (theme === "light") {
-				if (typeof window !== "undefined")
-					document.documentElement.classList.add("dark");
-			} else {
-				if (typeof window !== "undefined")
-					window.document.documentElement.classList.remove("dark");
-			}
-		}
+		await axios
+			.post("/api/switch_theme", {
+				userId: user.id,
+				theme: theme,
+			})
+			.then((res) => {
+				dispatch(setUser({ ...user, currentTheme: theme }));
+				// Apply or remove the 'dark' class to the root HTML element
+				if (theme === "light") {
+					if (typeof window !== "undefined")
+						document.documentElement.classList.add("dark");
+				} else {
+					if (typeof window !== "undefined")
+						window.document.documentElement.classList.remove("dark");
+				}
+			})
+			.catch((error) => {
+				console.error("Error updating user theme:", error.message);
+			});
 	};
 
 	// Here we toggle the theme between light and dark.
@@ -375,6 +387,11 @@ const Header = ({}: Props) => {
 									</MenuItem>
 								</>
 							) : null}
+							<Link href='/referral-center'>
+								<MenuItem className='menu-link'>
+									<MdGroupAdd className='mr-2' /> Referral Center
+								</MenuItem>
+							</Link>
 							<Link
 								href='https://ecoxsolar.com/'
 								target='_blank'
@@ -384,7 +401,7 @@ const Header = ({}: Props) => {
 								</MenuItem>
 							</Link>
 							<Link
-								href='https://eco-wealth.canny.io/'
+								href='/feedback'
 								target='_blank'
 							>
 								<MenuItem className='menu-link'>
@@ -405,6 +422,11 @@ const Header = ({}: Props) => {
 							>
 								<MenuItem className='menu-link'>
 									<MdBugReport className='mr-2' /> Report a Bug
+								</MenuItem>
+							</Link>
+							<Link href='/updates'>
+								<MenuItem className='menu-link'>
+									<MdUpdate className='mr-2' /> News & Updates
 								</MenuItem>
 							</Link>
 							{/* TODO: fix light & dark mode */}
@@ -465,19 +487,23 @@ const Header = ({}: Props) => {
 							Join the waiting list today
 						</button>
 						<WaitingListMobileMenu />
-						{/* <a
-							className='cursor-pointer hover:underline text-[var(--cta-one)] font-medium'
-							onClick={handleLoginClick}
-						>
-							Login
-						</a>
-
-						<a
-							className='cursor-pointer hover:underline text-[var(--cta-one)] font-medium'
-							onClick={handleSignupClick}
-						>
-							Signup
-						</a> */}
+						{BASE_URL === "https://alpha.ecowealth.app" ||
+							(BASE_URL === "http://localhost:3000" && (
+								<div className='flex-col'>
+									<a
+										className='hidden md:block cursor-pointer hover:underline text-green-600 font-medium'
+										onClick={handleLoginClick}
+									>
+										Login
+									</a>
+									<a
+										className='hidden md:block cursor-pointer hover:underline text-green-600 font-medium'
+										onClick={handleSignupClick}
+									>
+										Signup
+									</a>
+								</div>
+							))}
 					</>
 				)}
 			</div>

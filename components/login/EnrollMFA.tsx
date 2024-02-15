@@ -2,6 +2,7 @@
 import { useAppSelector } from "@/redux/hooks";
 import { RootState } from "@/redux/store";
 import { supabaseClient as supabase } from "@/utils/supabaseClient";
+import axios from "axios";
 import { usePathname, useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
 
@@ -34,40 +35,25 @@ function EnrollMFA({
 	const user = useAppSelector((state: RootState) => state.user);
 	const router = useRouter();
 	const path = usePathname();
-	const onEnableClicked = () => {
+
+	const onEnableClicked = async () => {
 		setLoading(true);
 		setError("");
-		(async () => {
-			const challenge = await supabase.auth.mfa.challenge({ factorId });
-			if (challenge.error) {
-				setError(challenge.error.message);
-				setLoading(false);
-				return challenge.error;
-			}
-
-			const challengeId = challenge.data.id;
-
-			const verify = await supabase.auth.mfa.verify({
+		await axios
+			.post("/api/mfa/enroll/challenge", {
+				verifyCode,
 				factorId,
-				challengeId,
-				code: verifyCode,
-			});
-			if (verify.error) {
-				setError(verify.error.message);
-				setLoading(false);
-				return;
-			} else {
-				await supabase
-					.from("users")
-					.update({
-						mfa_enabled: true,
-					})
-					.eq("id", user.id);
+				userId: user.id,
+			})
+			.then((res) => {
 				setVerified(true);
 				onEnrolled();
 				if (redirectTo) router.push(redirectTo);
-			}
-		})();
+			})
+			.catch((error) => {
+				setError(error.message);
+				setLoading(false);
+			});
 	};
 
 	useEffect(() => {
@@ -81,34 +67,15 @@ function EnrollMFA({
 			}
 		}
 		(async () => {
-			const { data, error } = await supabase.auth.mfa.enroll({
-				factorType: "totp",
-			});
-			if (error) {
-				if (
-					error.message ===
-					"Enrolled factors exceed allowed limit, unenroll to continue"
-				) {
-					const factors = await supabase.auth.mfa.listFactors();
-					console.log("factors >>> ", factors?.data?.all);
-					if (factors?.data?.all.length === 10) {
-						for (let i = 0; i < factors?.data?.all.length; i++) {
-							await supabase.auth.mfa.unenroll({
-								factorId: factors?.data?.all[i].id,
-							});
-						}
-					}
-					console.log("error >>> ", error);
+			await axios
+				.post("/api/mfa/enroll", { userId: user.id })
+				.then((res) => {
+					setFactorId(res.data.factorId);
+					setQR(res.data.qr);
+				})
+				.catch((error) => {
 					setError(error.message);
-					return;
-				}
-			}
-			console.log("mfa enroll data >>> ", data);
-			setFactorId((data as any)?.id);
-
-			// Supabase Auth returns an SVG QR code which you can convert into a data
-			// URL that you can place in an <img> tag.
-			setQR((data as any)?.totp.qr_code);
+				});
 		})();
 	}, []);
 

@@ -6,6 +6,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
 	const {
 		title,
 		bannerUrl,
+		imageUrls,
 		coordinatorName,
 		coordinatorPhone,
 		description,
@@ -40,7 +41,8 @@ export async function POST(req: NextRequest, res: NextResponse) {
 		.update({
 			title,
 			updated_at: new Date().toISOString(),
-			image_url: bannerUrl,
+			banner_url: bannerUrl,
+			image_urls: imageUrls,
 			project_coordinator_contact: {
 				name: coordinatorName,
 				phone: coordinatorPhone,

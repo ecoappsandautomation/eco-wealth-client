@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import convertToCamelCase from "@/utils/convertToCamelCase";
 import Project from "@/components/producer/projects/Project";
 import withAuth from "@/utils/withAuth";
+import axios from "axios";
 
 function Projects() {
 	const path: any = useParams();
@@ -14,22 +15,20 @@ function Projects() {
 		Project | TreeProject | EnergyProject | null
 	>(null);
 	const fetchProject = async () => {
-		const { data, error } = await supabase
-			.from("projects")
-			.select(
-				`*, tree_projects(*), energy_projects(*), solar_projects(*), producer_properties(*), project_milestones(*), tree_investments(*), energy_investments(*), project_financials(*)`
-			)
-			.eq("id", id)
-			.neq("is_deleted", true);
-		if (error) {
-			console.error("Error fetching projects:", error);
-			toast.error(error.message);
-		}
-		if (data) {
-			setProject(
-				convertToCamelCase(data[0]) as Project | TreeProject | EnergyProject
-			);
-		}
+		await axios
+			.post("/api/project", {
+				projectId: id,
+				options: {
+					query: `*, tree_projects(*), energy_projects(*), solar_projects(*), producer_properties(*), project_milestones(*), tree_investments(*), energy_investments(*), project_financials(*)`,
+				},
+			})
+			.then((res) => {
+				setProject(convertToCamelCase(res.data.data));
+			})
+			.catch((error) => {
+				console.error("Error fetching project:", error.message);
+				toast.error(error.message);
+			});
 	};
 	useEffect(() => {
 		fetchProject();

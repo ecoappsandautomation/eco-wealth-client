@@ -1,5 +1,6 @@
+"use client";
 import WaitingListForm from "@/components/WaitingListForm";
-import React from "react";
+import React, { useEffect } from "react";
 
 type Props = {};
 

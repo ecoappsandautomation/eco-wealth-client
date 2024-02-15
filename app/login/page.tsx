@@ -11,6 +11,9 @@ import Image from "next/image";
 import { BASE_URL } from "@/constants";
 import { set } from "react-hook-form";
 import axios from "axios";
+import DOMPurify from "dompurify";
+import validator from "validator";
+import isEmail from "validator/lib/isEmail";
 export default function Login() {
 	const user = useAppSelector((state: RootState) => state.user);
 	const isLoggedIn = useAppSelector((state: RootState) => state.user?.loggedIn);
@@ -21,137 +24,45 @@ export default function Login() {
 	const [password, setPassword] = useState("");
 	const [verified, setVerified] = useState(false);
 	const [loading, setLoading] = useState(false);
-	function isOlderThan30Days(timestamp: string) {
-		if (!timestamp) return false;
-		// Parse the input timestamp into a Date object
-		const dateFromTimestamp = new Date(timestamp);
 
-		// Get the current date and time
-		const now = new Date();
-
-		// Subtract 30 days from the current date
-		const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-
-		// If dateFromTimestamp is older than thirtyDaysAgo, return true
-		// otherwise, return false
-		return dateFromTimestamp < thirtyDaysAgo;
-	}
-
-	const fetchUserData = async (userId: string) => {
-		console.log("fetching user data...", userId);
-		try {
-			const { data, error } = await supabase
-				.from("users")
-				.select("*, producers(*), investors(*)")
-				.eq("id", userId)
-				.single();
-			if (error) {
-				console.error("Error fetching user data:", error.message);
-
-				return null;
-			}
-			console.log("data >> ", data);
-			console.log(
-				"isOlderThan30Days(data.mfa_verified_at) >> ",
-				isOlderThan30Days(data.mfa_verified_at)
-			);
-			if (
-				data.mfa_enabled &&
-				isOlderThan30Days(data.mfa_verified_at) &&
-				data.mfa_verified
-			) {
-				setVerified(false);
-			}
-			if (data.mfa_enabled && isOlderThan30Days(data.mfa_verified_at)) {
-				console.log("mfa older than 30 days...");
-				if (data.mfa_verified) {
-					console.log("mfa_verified is true, setting to false...");
-					await axios.post("/api/update_mfa", { userId });
-				}
-				const userValues = {
-					loggedIn: true,
-					name: data?.name,
-					email: data?.email,
-					phoneNumber: data?.phone_number,
-					isVerified: data?.is_verified,
-					roles: data?.roles,
-					id: data?.id,
-					producerId: data?.producers?.id,
-					investorId: data?.investors?.id,
-					activeRole: data?.active_role,
-					onboardingComplete: data?.onboarding_complete,
-					investorOnboardingComplete: data?.investors?.onboarding_complete,
-					producerOnboardingComplete: data?.producers?.onboarding_complete,
-					emailNotification: data?.email_notification,
-					smsNotification: data?.sms_notification,
-					pushNotification: data?.push_notification,
-					mfaEnabled: data?.mfa_enabled,
-					mfaVerifiedAt: data?.mfa_verified_at,
-					mfaVerified: false,
-					loadingUser: false,
-				};
-				console.log("userValues >> ", userValues);
-				console.log("dispatching redux user details...");
-				dispatch(setUser(userValues)); // Dispatch a redux action
-				console.log("dispatched redux user details...");
-				setShowMFA(true);
-				setLoading(false);
-				return null;
-			}
-			if (!data.mfa_verified_at) {
-				setLoading(false);
-				setShowMFA(true);
-				return null;
-			}
-			setVerified(true);
-
-			if (!data.onboarding_complete) {
-				console.log("user is not onboarded");
-				router.push("/onboarding");
-			} else {
-				if (data?.active_role === "investor") {
-					router.push("/i/dashboard");
-				} else if (data?.active_role === "producer") {
-					router.push("/p/dashboard");
-				}
-			}
-			dispatch(
-				setUser({
-					loggedIn: true,
-					name: data.name,
-					email: data.email,
-					phoneNumber: data.phone_number,
-					isVerified: data.is_verified,
-					roles: data.roles,
-					id: data.id,
-					producerId: data.producers.id,
-					investorId: data.investors.id,
-					activeRole: data.active_role,
-					onboardingComplete: data.onboarding_complete,
-					investorOnboardingComplete: data.investors.onboarding_complete,
-					producerOnboardingComplete: data.producers.onboarding_complete,
-					emailNotification: data.email_notification,
-					smsNotification: data.sms_notification,
-					pushNotification: data.push_notification,
-					mfaEnabled: data.mfa_enabled,
-					mfaVerified: data.mfa_verified,
-					mfaVerifiedAt: data.mfa_verified_at,
-					loadingUser: false,
-				})
-			); // Dispatch a redux action
-			setLoading(false);
-			return data;
-		} catch (err) {
-			setLoading(false);
-			console.error("Unexpected error fetching user data:", err);
-			return null;
-		}
+	const [emailValid, setEmailValid] = useState(false);
+	const redirectToDashboard = (data: any) => {
+		console.log("redirecting to dashboard...");
+		const { activeRole } = data;
+		const dashboardPath =
+			activeRole === "investor"
+				? "/i/dashboard"
+				: activeRole === "producer"
+				? "/p/dashboard"
+				: "/";
+		router.push(dashboardPath);
 	};
 
-	const login = async (user: any) => {
-		setLoading(true);
-		const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-		await fetchUserData(user.id);
+	useEffect(() => {
+		validator.isEmail(email) ? setEmailValid(true) : setEmailValid(false);
+	}, [email]);
+
+	const getUserDetails = (data: any) => {
+		return {
+			name: data?.name,
+			email: data?.email,
+			phoneNumber: data?.phone_number,
+			isVerified: data?.is_verified,
+			roles: data?.roles,
+			id: data?.id,
+			producerId: data?.producers?.id,
+			investorId: data?.investors?.id,
+			activeRole: data?.active_role,
+			onboardingComplete: data?.onboarding_complete,
+			investorOnboardingComplete: data?.investors?.onboarding_complete,
+			producerOnboardingComplete: data?.producers?.onboarding_complete,
+			emailNotification: data?.email_notification,
+			smsNotification: data?.sms_notification,
+			pushNotification: data?.push_notification,
+			mfaEnabled: data?.mfa_enabled,
+			mfaVerifiedAt: data?.mfa_verified_at,
+			mfaFrequency: data?.mfa_frequency,
+		};
 	};
 
 	const userVerificationRouting = () => {
@@ -170,21 +81,7 @@ export default function Login() {
 		}
 	};
 
-	useEffect(() => {
-		console.log("user is logged in >>", isLoggedIn);
-		console.log("user from redux >>", user);
-		if (isLoggedIn) {
-			console.log("user >> ", user);
-			if (!user.mfaVerified || isOlderThan30Days(user.mfaVerifiedAt)) {
-				setShowMFA(true);
-			} else {
-				setShowMFA(false);
-				if (verified) userVerificationRouting();
-			}
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [user, isLoggedIn, user.mfaVerifiedAt, verified]);
-
+	// This useEffect handles users returning to the login page after already being logged in.
 	useEffect(() => {
 		if (!isLoggedIn) {
 			return;
@@ -192,6 +89,7 @@ export default function Login() {
 
 		if (isLoggedIn && user.mfaVerified) {
 			setShowMFA(false);
+			if (!user.onboardingComplete) router.push("/onboarding");
 			if (user.activeRole === undefined || user.activeRole === null) {
 				if (user.roles.includes("investor")) {
 					router.push("/i/dashboard");
@@ -214,29 +112,43 @@ export default function Login() {
 	async function handleEmailSignIn(event: React.FormEvent) {
 		event.preventDefault();
 		setLoading(true);
-		try {
-			const { error, data } = await supabase.auth.signInWithPassword({
-				email,
-				password,
-			});
-
-			if (error) {
-				console.error("Error signing in:", error.message);
-				toast.error(
-					`Error signing you in: ${error.message}, please try again.`
-				);
-				setLoading(false);
-			} else {
-				const userData = data.user;
-				if (userData) {
-					login(userData);
+		const sanitizedEmail = DOMPurify.sanitize(email);
+		axios
+			.post("/api/login", { email: sanitizedEmail, password })
+			.then((res) => {
+				console.log("res.data >>> ", res.data);
+				if (!res.data.mfaVerified) {
+					console.log("MFA not verified");
+					setVerified(false);
+					setShowMFA(true);
 				} else {
-					console.log("(login.js) No user data found in the response.");
+					console.log("MFA verified");
+					setVerified(true);
+					userVerificationRouting();
 				}
-			}
-		} catch (err) {
-			console.error("(login.js) Unexpected error during sign in:", err);
-		}
+				setLoading(false);
+				const userValues = {
+					loggedIn: true,
+					...getUserDetails(res.data.user),
+					mfaVerified: res.data.mfaVerified,
+					loadingUser: false,
+				};
+				dispatch(setUser(userValues));
+				if (!res.data.onboardingComplete && res.data.mfaVerified) {
+					console.log("user is not onboarded");
+					router.push("/onboarding");
+				}
+				if (res.data.onboardingComplete && res.data.mfaVerified) {
+					redirectToDashboard(res.data);
+				}
+
+				setLoading(false);
+			})
+			.catch((err) => {
+				console.log("err logging in>>> ", err);
+				toast.error(`Error signing you in: ${err.message}, please try again.`);
+				setLoading(false);
+			});
 	}
 
 	const handleEmailInput = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -301,9 +213,9 @@ export default function Login() {
 						/>
 						<button
 							type='submit'
-							disabled={loading}
+							disabled={loading || !emailValid}
 							className={
-								loading
+								loading || !emailValid
 									? "p-2 rounded bg-gray-600 text-white font-bold transition-all cursor-default"
 									: "cursor-pointer p-2 rounded bg-[var(--cta-one)] text-white font-bold transition-all hover:bg-[var(--cta-one-hover)] hover:scale-105"
 							}

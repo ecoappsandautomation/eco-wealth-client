@@ -14,20 +14,21 @@ export default function withAuth(WrappedComponent: React.ComponentType<any>) {
 		const pathname = usePathname();
 		const dispatch = useAppDispatch();
 
-		function isOlderThan30Days(timestamp: string) {
+		function isOlderThanADay(timestamp: string) {
 			// Parse the input timestamp into a Date object
 			const dateFromTimestamp = new Date(timestamp);
 
 			// Get the current date and time
 			const now = new Date();
 
-			// Subtract 30 days from the current date
-			const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+			// Subtract 24 hours from the current date
+			const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-			// If dateFromTimestamp is older than thirtyDaysAgo, return true
+			// If dateFromTimestamp is older than oneDayAgo, return true
 			// otherwise, return false
-			return dateFromTimestamp < thirtyDaysAgo;
+			return dateFromTimestamp < oneDayAgo;
 		}
+
 		// Here we query public.users for the user's additional profile data
 		const fetchUserData = async (userId: string) => {
 			try {
@@ -41,7 +42,7 @@ export default function withAuth(WrappedComponent: React.ComponentType<any>) {
 
 					return null;
 				}
-				if (data.mfa_verified_at && isOlderThan30Days(data.mfa_verified_at)) {
+				if (data.mfa_verified_at && isOlderThanADay(data.mfa_verified_at)) {
 					return router.push("/login");
 				}
 				console.log("user authenticated.");
@@ -66,6 +67,7 @@ export default function withAuth(WrappedComponent: React.ComponentType<any>) {
 						mfaEnabled: data.mfa_enabled,
 						mfaVerified: data.mfa_verified,
 						mfaVerifiedAt: data.mfa_verified_at,
+						mfaFrequency: data.mfa_frequency,
 						currentTheme:
 							data.current_theme !== null ? data.current_theme : "dark",
 						loadingUser: false,
@@ -116,7 +118,6 @@ export default function withAuth(WrappedComponent: React.ComponentType<any>) {
 		};
 
 		useEffect(() => {
-			console.log("user >>> ", user);
 			if (user.loggedIn) {
 				let role = null;
 				if (pathname?.includes("/i/")) {

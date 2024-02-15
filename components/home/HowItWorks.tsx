@@ -5,7 +5,7 @@ type Props = {};
 export default function HowItWorks({}: Props) {
 	return (
 		<>
-			<hr className='border-green-400' />
+			<hr className='border-green-900' />
 			<div
 				id='how-it-works'
 				className='py-[100px] px-[64px]'

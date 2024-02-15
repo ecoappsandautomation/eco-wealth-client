@@ -23,6 +23,11 @@ const nextConfig = {
 		admin_fee_id: process.env.ADMIN_FEES_PRICE_ID,
 		stripe_webhook_secret: process.env.STRIPE_WEBHOOK_SECRET,
 		sendgrid_api_key: process.env.SENDGRID_API_KEY,
+		recaptcha_site_key: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
+		recaptcha_secret_key: process.env.RECAPTCHA_SECRET_KEY,
+	},
+	experimental: {
+		serverActions: true,
 	},
 };
 

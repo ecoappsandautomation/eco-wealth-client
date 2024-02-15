@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { use, useEffect, useState } from "react";
 import { setUser } from "@/redux/features/userSlice";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { RootState } from "@/redux/store";
@@ -27,10 +27,12 @@ export default function AlphaV1({}: Props) {
 	const [emailError, setEmailError] = useState("");
 	useEffect(() => {
 		dispatch(setUser({ ...user, loadingUser: false }));
-		if (!paramEmail) return setLoading(false);
+		// Check if email is in url param or if user is logged in
+		if (!paramEmail && !user.email) return setLoading(false);
+		// Check if user is on waitlist with email
 		const checkIfUserOnWaitlist = async () => {
 			await axios
-				.post("/api/verify_waiting_list_registration", { paramEmail })
+				.post("/api/verify_waiting_list_registration", { email })
 				.then((res) => {
 					if (res.data.onWaitlist) {
 						// Code block goes here
@@ -45,11 +47,19 @@ export default function AlphaV1({}: Props) {
 				});
 		};
 		checkIfUserOnWaitlist();
-	}, [user, dispatch, paramEmail]);
+	}, [user, dispatch, paramEmail, email]);
 
+	// Set email from url param
 	useEffect(() => {
 		if (paramEmail) setEmail(paramEmail);
 	}, [paramEmail]);
+
+	// Set email from logged in user
+	useEffect(() => {
+		if (user.email) setEmail(user.email);
+	}, [user.email]);
+
+	// Handle verify email click
 	const handleVerifyEmailClick = async () => {
 		if (!isEmailValid(email))
 			return setEmailError("Please enter a valid email");
@@ -69,12 +79,18 @@ export default function AlphaV1({}: Props) {
 				setLoading(false);
 			});
 	};
+
+	// Navigate to memo
 	const googleDocUrl =
 		"https://docs.google.com/document/d/1i34086N8Frdbfjsor-BmI_j-XMq1l8C6YxFRBKfmSVE/edit?usp=sharing";
 	const handleMemoLinkClick = () => {
 		router.push(googleDocUrl);
 	};
+
+	// Link to join waiting list
 	const handleWaitingListClick = () => router.push("/register");
+
+	// Render view with no access if no email param or not logged in
 	if (!userOnWaitlist)
 		return (
 			<div className='flex flex-col items-center justify-center min-h-screen '>
@@ -139,6 +155,8 @@ export default function AlphaV1({}: Props) {
 				)}
 			</div>
 		);
+
+	// Render view with memo access if email is on waitlist
 	if (userOnWaitlist)
 		return (
 			<div className='flex flex-col items-center justify-center min-h-screen '>

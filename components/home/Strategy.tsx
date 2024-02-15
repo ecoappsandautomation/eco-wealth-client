@@ -5,7 +5,7 @@ type Props = {};
 export default function Strategy({}: Props) {
 	return (
 		<>
-			<hr className='border-green-400' />
+			<hr className='border-green-900' />
 			<div
 				id='strategy'
 				className='py-[100px] px-[64px]'
