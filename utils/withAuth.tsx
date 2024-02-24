@@ -63,6 +63,7 @@ export default function withAuth(WrappedComponent: React.ComponentType<any>) {
 						pushNotification: data.push_notification,
 						onboardingComplete: data.onboarding_complete,
 						investorOnboardingComplete: data?.investors?.onboarding_complete,
+						investorOnboardingSkipped: data?.investors?.onboarding_skipped,
 						producerOnboardingComplete: data?.producers?.onboarding_complete,
 						mfaEnabled: data.mfa_enabled,
 						mfaVerified: data.mfa_verified,
@@ -80,7 +81,8 @@ export default function withAuth(WrappedComponent: React.ComponentType<any>) {
 
 				if (
 					data.active_role === "investor" &&
-					!data.investors[0].onboarding_complete
+					!data.investors[0].onboarding_complete &&
+					!data.investors[0].onboarding_skipped
 				) {
 					router.push("/i/onboarding/");
 				} else if (
@@ -145,7 +147,8 @@ export default function withAuth(WrappedComponent: React.ComponentType<any>) {
 						}
 						if (
 							user.activeRole === "investor" &&
-							!user.investorOnboardingComplete
+							!user.investorOnboardingComplete &&
+							!user.investorOnboardingSkipped
 						) {
 							return router.push("/i/onboarding");
 						}

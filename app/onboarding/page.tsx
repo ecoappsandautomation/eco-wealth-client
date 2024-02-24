@@ -54,13 +54,15 @@ const Onboarding: FC = () => {
 			});
 	};
 
-	const handleButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+	const handleButtonClick = async (
+		event: React.MouseEvent<HTMLButtonElement>
+	) => {
 		event.preventDefault();
 		setLoading(true);
 		const accountRole =
 			event.currentTarget.getAttribute("data-account-role") || "";
 		setRole(accountRole);
-		updateUserData(accountRole);
+		await updateUserData(accountRole);
 	};
 
 	const handleNameSubmit = (e: React.FormEvent) => {
@@ -113,7 +115,7 @@ const Onboarding: FC = () => {
 						</h2>
 						<div>
 							<label className='mr-4 text-left mb-4 text-xl text-gray-500 dark:text-white'>
-								What&apos;s your name?
+								What&apos;s your full name?
 							</label>
 							<input
 								value={name}

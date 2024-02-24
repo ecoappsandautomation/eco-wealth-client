@@ -16,6 +16,7 @@ const initialState: UserState = {
 	userTreeCount: 0,
 	onboardingComplete: false,
 	investorOnboardingComplete: false,
+	investorOnboardingSkipped: false,
 	producerOnboardingComplete: false,
 	emailNotification: false,
 	smsNotification: false,
@@ -25,6 +26,8 @@ const initialState: UserState = {
 	mfaVerifiedAt: "",
 	mfaFrequency: "",
 	loadingUser: true,
+	refAgreement: false,
+	referralId: "",
 };
 
 export const userSlice = createSlice({
@@ -39,6 +42,8 @@ export const userSlice = createSlice({
 			if (userData.producerId) state.producerId = userData.producerId;
 			if (userData.investorId) state.investorId = userData.investorId;
 			if (userData.activeRole) state.activeRole = userData.activeRole;
+			if (userData.refAgreement) state.refAgreement = userData.refAgreement;
+			if (userData.referralId) state.referralId = userData.referralId;
 			if (userData.currentTheme) state.currentTheme = userData.currentTheme;
 			if (userData.email) state.email = userData.email;
 			if (userData.phoneNumber) state.phoneNumber = userData.phoneNumber;
@@ -52,6 +57,8 @@ export const userSlice = createSlice({
 				state.onboardingComplete = userData.onboardingComplete;
 			if (userData.investorOnboardingComplete !== undefined)
 				state.investorOnboardingComplete = userData.investorOnboardingComplete;
+			if (userData.investorOnboardingSkipped !== undefined)
+				state.investorOnboardingSkipped = userData.investorOnboardingSkipped;
 			if (userData.producerOnboardingComplete !== undefined)
 				state.producerOnboardingComplete = userData.producerOnboardingComplete;
 			if (userData.emailNotification !== undefined)

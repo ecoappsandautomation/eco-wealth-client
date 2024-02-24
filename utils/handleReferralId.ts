@@ -35,7 +35,7 @@ export default async function handleReferralId(
 
 						localStorage.setItem("referralData", JSON.stringify(referralData));
 						updateUrlWithReferralId(res.data);
-						setReferrer(res.data.referrer.name);
+						if (setReferrer) setReferrer(res.data.referrer.name);
 						return;
 					}
 				})
@@ -53,7 +53,7 @@ export default async function handleReferralId(
 					if (res.data) {
 						// Referral ID is still valid, keep it
 						updateUrlWithReferralId(storedRefId);
-						setReferrer(referrer);
+						if (setReferrer) setReferrer(referrer);
 						return;
 					}
 				})
@@ -61,7 +61,7 @@ export default async function handleReferralId(
 					console.log("err >>> ", err);
 					localStorage.removeItem("referralData");
 					updateUrlWithReferralId("");
-					setReferrer("");
+					if (setReferrer) setReferrer("");
 				});
 		}
 	} else {
@@ -84,14 +84,14 @@ export default async function handleReferralId(
 					};
 					localStorage.setItem("referralData", JSON.stringify(referralData));
 					updateUrlWithReferralId(ReferralId);
-					setReferrer(res.data.referrer.name);
+					if (setReferrer) setReferrer(res.data.referrer.name);
 					return;
 				}
 			})
 			.catch((err) => {
 				console.log("err >>> ", err);
 				updateUrlWithReferralId("");
-				setReferrer("");
+				if (setReferrer) setReferrer("");
 				return;
 			});
 	}

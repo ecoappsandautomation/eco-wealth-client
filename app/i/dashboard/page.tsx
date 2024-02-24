@@ -9,6 +9,7 @@ import axios from "axios";
 import getBasePath from "@/lib/getBasePath";
 import convertToCamelCase from "@/utils/convertToCamelCase";
 import Loading from "@/components/Loading";
+import { useRouter } from "next/navigation";
 
 interface DashboardProps {}
 type MetricData = {
@@ -38,7 +39,7 @@ const Dashboard = ({}: DashboardProps) => {
 	const user = useAppSelector((state: RootState) => state.user);
 	const [loading, setLoading] = useState(false);
 	const [metricData, setMetricData] = useState<MetricData | null>(null); // [TODO] - type this properly
-
+	const router = useRouter();
 	// State for animation
 	const [totalUserTreeContributions, setTotalUserTreeContributions] =
 		useState(0);
@@ -214,6 +215,24 @@ const Dashboard = ({}: DashboardProps) => {
 
 	return (
 		<div className='w-3/4 mx-auto'>
+			{!user.investorOnboardingComplete && user.investorOnboardingSkipped && (
+				<div className='text-sm md:text-base mx-auto border border-orange-500 rounded-lg mt-4 py-2 md:p-8 text-center mb-8'>
+					<p className='text-sm md:text-base mb-4 md:mb-4'>
+						<b>Important:</b> Please complete your investor onboarding to
+						complete your investor account setup.
+					</p>
+					<div className='flex justify-center'>
+						<button
+							onClick={() => {
+								router.push("/i/onboarding");
+							}}
+							className='bg-[var(--cta-one)] text-white px-4 py-2 rounded-md hover:bg-[var(--cta-one-hover)] transition-all'
+						>
+							Complete Onboarding
+						</button>
+					</div>
+				</div>
+			)}
 			<h1 className='text-2xl md:text-3xl font-bold my-4 md:my-8'>
 				Investor Dashboard | Hello {user.name}!
 			</h1>

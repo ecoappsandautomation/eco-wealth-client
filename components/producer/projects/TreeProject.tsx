@@ -7,7 +7,6 @@ type Props = {
 };
 
 export default function TreeProject({ project, treeProject }: Props) {
-	console.log("project", project);
 	return (
 		<div>
 			<p className='mb-2'>

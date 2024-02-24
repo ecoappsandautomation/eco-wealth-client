@@ -65,29 +65,33 @@ const Header = ({}: Props) => {
 		setAnchorEl(null);
 	};
 
-	const switchRole = (role: String) => {
-		fetch("/api/switch_active_role", {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify({ role: role, userId: user?.id }),
-		})
-			.then((response) => response.json())
-			.then(() => {
+	const switchRole = async (role: String) => {
+		await axios
+			.post("/api/switch_active_role", {
+				role,
+				userId: user?.id,
+			})
+			.then((response) => {
+				console.log("response >>> ", response);
+				if (role === "investor") {
+					dispatch(setUser({ ...user, activeRole: "investor" }));
+					router.push("/i/dashboard");
+				} else if (role === "producer") {
+					dispatch(setUser({ ...user, activeRole: "producer" }));
+					router.push("/p/dashboard");
+				}
 				handleClose();
+			})
+			.catch((error) => {
+				console.error("Error switching active role:", error.message);
 			});
 	};
 
-	const handleToggleRole = () => {
+	const handleToggleRole = async () => {
 		if (activeRole === "producer") {
-			dispatch(setUser({ ...user, activeRole: "investor" }));
-			router.push("/i/dashboard");
-			switchRole("investor");
+			await switchRole("investor");
 		} else if (activeRole === "investor") {
-			dispatch(setUser({ ...user, activeRole: "producer" }));
-			router.push("/p/dashboard");
-			switchRole("producer");
+			await switchRole("producer");
 		}
 	};
 
@@ -153,7 +157,7 @@ const Header = ({}: Props) => {
 						loadingUser: true,
 					})
 				);
-
+				handleClose();
 				router.push("/login");
 				router.refresh();
 			})

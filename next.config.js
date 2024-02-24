@@ -25,6 +25,8 @@ const nextConfig = {
 		sendgrid_api_key: process.env.SENDGRID_API_KEY,
 		recaptcha_site_key: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
 		recaptcha_secret_key: process.env.RECAPTCHA_SECRET_KEY,
+		supabase_project_bucket_url:
+			process.env.NEXT_PUBLIC_SUPABASE_PROJECT_BUCKET_URL,
 	},
 	experimental: {
 		serverActions: true,

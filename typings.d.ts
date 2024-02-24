@@ -55,6 +55,7 @@ interface UserState {
 	// Onboarding
 	onboardingComplete: boolean;
 	investorOnboardingComplete: boolean;
+	investorOnboardingSkipped: boolean;
 	producerOnboardingComplete: boolean;
 
 	// Notifications
@@ -71,6 +72,10 @@ interface UserState {
 
 	// Timestamps
 	mfaVerifiedAt: string;
+
+	// Referral
+	refAgreement: boolean;
+	referralId: string;
 }
 
 interface ProducerState {
@@ -170,8 +175,9 @@ interface Project {
 	// project details
 	title: string;
 	description: string;
-	bannerUrl: string;
-	imageUrls: string[];
+	externalUrl: string;
+	imageUrls: ImageUrls;
+	videoUrls: string[];
 	status: string;
 	type: string;
 	isNonProfit: boolean;
@@ -229,7 +235,10 @@ interface Project {
 	currentSoilOrganicContentPercentage?: number;
 	targetSoilOrganicContentPercentage?: number;
 }
-
+type ImageUrls = {
+	url: string;
+	isBanner: boolean;
+}[];
 interface ProjectFinancials {
 	id: string;
 	projectId: string;

@@ -16,14 +16,15 @@ function Projects() {
 	>(null);
 	const fetchProject = async () => {
 		await axios
-			.post("/api/project", {
+			.post("/api/p/projects", {
 				projectId: id,
 				options: {
 					query: `*, tree_projects(*), energy_projects(*), solar_projects(*), producer_properties(*), project_milestones(*), tree_investments(*), energy_investments(*), project_financials(*)`,
 				},
 			})
 			.then((res) => {
-				setProject(convertToCamelCase(res.data.data));
+				console.log("Project fetched:", res.data.data);
+				setProject(convertToCamelCase(res.data.data[0]));
 			})
 			.catch((error) => {
 				console.error("Error fetching project:", error.message);

@@ -1,16 +1,22 @@
+import {
+	getProjectStatuses,
+	isValidStatusChange,
+} from "@/lib/getProjectStatuses";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { get } from "http";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest, res: NextResponse) {
 	const {
 		title,
-		bannerUrl,
 		imageUrls,
+		videoUrls,
 		coordinatorName,
 		coordinatorPhone,
 		description,
-		status,
+		currentStatus,
+		newStatus,
 		projectType,
 		totalArea,
 		projectAddressId,
@@ -29,32 +35,42 @@ export async function POST(req: NextRequest, res: NextResponse) {
 		connectWithSolarPartner,
 		energyType,
 		projectId,
+		producerId,
 	} = await req.json();
 	const cookieStore = cookies();
 	const supabase = createRouteHandlerClient<any>({
 		cookies: () => cookieStore,
 	});
-
+	const validStatusChange = isValidStatusChange(currentStatus, newStatus);
+	if (!validStatusChange)
+		return NextResponse.json(
+			{ error: "Invalid status change" },
+			{ status: 400 }
+		);
+	console.log("projectId", projectId);
+	console.log("producerId", producerId);
+	console.log("property_address_id", projectAddressId);
 	// Update the project in the 'projects' table
 	let { data, error } = await supabase
 		.from("projects")
 		.update({
 			title,
 			updated_at: new Date().toISOString(),
-			banner_url: bannerUrl,
 			image_urls: imageUrls,
+			video_urls: videoUrls,
 			project_coordinator_contact: {
 				name: coordinatorName,
 				phone: coordinatorPhone,
 			},
 			description,
-			status,
+			status: newStatus,
 			type: projectType,
 			total_area_sqkm: totalArea,
 			property_address_id: projectAddressId,
 			is_verified: false,
 		})
-		.eq("id", projectId);
+		.eq("id", projectId)
+		.eq("producer_id", producerId);
 
 	if (error) {
 		return NextResponse.json({ error: error.message }, { status: 500 });
@@ -69,10 +85,11 @@ export async function POST(req: NextRequest, res: NextResponse) {
 				funds_requested_per_tree: fundsRequestedPerTree,
 				type: treeType,
 			})
-			.eq("id", projectId);
+			.eq("id", projectId)
+			.eq("producer_id", producerId);
 
 		if (error) {
-			return NextResponse.json({ error: error.message }, { status: 500 });
+			return NextResponse.json({ error: error.message }, { status: 501 });
 		}
 	}
 
@@ -93,10 +110,11 @@ export async function POST(req: NextRequest, res: NextResponse) {
 				installation_team: installationTeam,
 				connect_with_solar_partner: connectWithSolarPartner,
 			})
-			.eq("id", projectId);
+			.eq("id", projectId)
+			.eq("producer_id", producerId);
 
 		if (error) {
-			return NextResponse.json({ error: error.message }, { status: 500 });
+			return NextResponse.json({ error: error.message }, { status: 502 });
 		}
 	}
 

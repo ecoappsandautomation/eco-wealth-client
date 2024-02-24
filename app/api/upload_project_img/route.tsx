@@ -7,31 +7,48 @@ export async function POST(req: any) {
 	const supabase = createRouteHandlerClient<any>({
 		cookies: () => cookieStore,
 	});
-	const { files, projectId } = await req.json(); // Assuming filesData is an array of objects containing filePath and file for each file
 
+	// Access FormData directly from the request body
+	const formData = await req.formData();
+	console.log("formData >>> ", formData);
+	// Extract projectId from FormData
+	const projectId = formData.get("projectId");
+	const files = formData.getAll("files");
+	// Check if projectId is provided
+	if (!projectId) {
+		return NextResponse.json(
+			{ error: "Project ID is required" },
+			{ status: 400 }
+		);
+	}
+	console.log("files >>> ", files);
 	// Array to store promises for each upload operation
-	const uploadPromises = files.map(
-		async ({ name }: { name: string; files: File }) => {
-			const filePath = `/projects/${projectId}/${name}`;
-			const { data, error } = await supabase.storage
-				.from("projects")
-				.upload(filePath, files);
+	const uploadPromises = [];
+	for (const file of files) {
+		// Iterate over files directly
+		// Upload each file to the storage bucket
+		const fileName = file.name || "unnamed-file";
+		const filePath = `/projects/${projectId}/${fileName}`;
+		const { data, error } = await supabase.storage
+			.from("projects")
+			.upload(filePath, file);
 
-			if (error) {
-				// If any error occurs during upload, return the error message
-				return { error: error.message };
-			}
-
-			return { data };
+		if (error) {
+			// If any error occurs during upload, return the error message
+			return NextResponse.json(
+				{ error: `Error uploading file '${fileName}': ${error.message}` },
+				{ status: 500 }
+			);
 		}
-	);
+
+		uploadPromises.push({ data });
+	}
 
 	// Execute all upload promises concurrently
 	const results = await Promise.all(uploadPromises);
 
 	// Check for any errors in the results
 	const hasError = results.some((result) => "error" in result);
-
 	if (hasError) {
 		// If any upload failed, return an error response
 		return NextResponse.json(

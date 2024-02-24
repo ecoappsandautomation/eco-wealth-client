@@ -236,7 +236,20 @@ export default function InvestorOnboarding() {
 	const handlePreviousStep = () => {
 		setStep(step - 1);
 	};
-
+	const handleSkipOnboarding = async (e: React.MouseEvent) => {
+		e.preventDefault();
+		await axios
+			.post("/api/onboard/investor/skip", { userId: user.id })
+			.then((res) => {
+				console.log("Investor onboarding skipped:", res);
+				dispatch(setUser({ ...user, investorOnboardingSkipped: true }));
+				router.push("/i/dashboard");
+			})
+			.catch((error) => {
+				console.error("Error skipping investor onboarding:", error.message);
+				toast.error(`Error skipping investor onboarding: ${error.message}`);
+			});
+	};
 	// Here we render the onboarding content based on the step.
 	const renderInvestorOnboardingContent = () => {
 		switch (step) {
@@ -254,6 +267,7 @@ export default function InvestorOnboarding() {
 						preferredTreeTypes={preferredTreeTypes}
 						handleTreeTypeChange={handleTreeTypeChange}
 						handleNextStep={handleNextStep}
+						handleSkipOnboarding={handleSkipOnboarding}
 					/>
 				);
 			case 2:

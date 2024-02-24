@@ -19,6 +19,9 @@ import getBasePath from "@/lib/getBasePath";
 import Loading from "@/components/Loading";
 import { HiSwitchHorizontal } from "react-icons/hi";
 import { IoIosCheckmarkCircle } from "react-icons/io";
+import { v4 as uuid } from "uuid";
+import ImageUpload from "@/components/ImageUpload";
+import VideoUploadInput from "@/components/producer/projects/VideoUpload";
 interface FormValues {
 	title: string;
 	image: File | null;
@@ -31,6 +34,8 @@ interface FormValues {
 	agreements: boolean;
 	imageFile: FileList | null;
 	imageUrlInput: string;
+	imageUrls: ImageUrls;
+	videoUrls: string[];
 	uploadMethod: boolean;
 	treeProjectType: string;
 	treeType: string;
@@ -38,7 +43,6 @@ interface FormValues {
 	totalArea: number;
 	properties: Property[]; // Replace 'Property' with the actual type
 	projectAddressId: string;
-	projectBannerUrl: string;
 	energyProductionTarget: number;
 	numOfArrays: number;
 	installationTeam: string;
@@ -83,6 +87,9 @@ function AddProject() {
 	const handleClose = () => setOpen(false);
 	const supabase = supabaseClient;
 	const [isNonProfit, setIsNonProfit] = useState(false);
+	const [images, setImages] = useState<ImageUrls>([]);
+	const [uploadedImgFiles, setUploadedImgFiles] = useState<File[]>([]);
+
 	const handleIsNonProfitChange = (checked: boolean) => {
 		setIsNonProfit(checked);
 		setValue("isNonProfit", checked);
@@ -107,6 +114,8 @@ function AddProject() {
 			agreements: false,
 			imageFile: null,
 			imageUrlInput: "",
+			imageUrls: [],
+			videoUrls: [],
 			uploadMethod: true,
 			treeType: "",
 			treeProjectType: "",
@@ -114,7 +123,6 @@ function AddProject() {
 			totalArea: 0,
 			properties: [],
 			projectAddressId: "",
-			projectBannerUrl: "",
 			energyProductionTarget: 0,
 			numOfArrays: 0,
 			installationTeam: "",
@@ -142,6 +150,8 @@ function AddProject() {
 	const [loading, setLoading] = useState({ loading: false, message: "" });
 	const projectType = watch("projectType");
 	const locationType = watch("locationType");
+	const imageUrls = watch("imageUrls");
+	const videoUrls = watch("videoUrls");
 	const uploadMethod = watch("uploadMethod");
 	const energyType = watch("energyType");
 	const installationTeam = watch("installationTeam");
@@ -159,7 +169,28 @@ function AddProject() {
 	const dispatch = useAppDispatch();
 	const producer = useAppSelector((state) => state.producer);
 	const userId = user.id;
+	const addVideoUrl = () => {
+		// Update form value to add a new video url
+		setValue("videoUrls", [...videoUrls, ""]);
+	};
 
+	const removeVideoUrl = (index: number) => {
+		// Update form value to remove the url at the specified index
+		setValue(
+			"videoUrls",
+			[...videoUrls].filter((_, i) => i !== index)
+		);
+	};
+
+	const removeImageUrl = (index: number) => {
+		// Update form value to remove the url at the specified index
+		setValue(
+			"imageUrls",
+			[...imageUrls].filter((_, i) => i !== index) as [
+				{ url: string; isBanner: boolean }
+			]
+		);
+	};
 	// Here we retrieve the properties the user submitted that are verified so
 	// we can list them as options for the user to select from when adding a project.
 	const fetchProperties = async (producerId: string | null) => {
@@ -215,16 +246,87 @@ function AddProject() {
 	};
 
 	const producerId = user.producerId;
+	const removeUploadedImagesOnExit = async (uploadedFilePaths: any) => {
+		for (const uploadedFilePath of uploadedFilePaths) {
+			const { error: deleteError } = await supabase.storage
+				.from("projects")
+				.remove([uploadedFilePath]);
 
-	// Note to future me - Might need to update everything to 'watch' for react-hook-form
-	const createProject = async (bannerUrl: string) => {
+			if (deleteError) {
+				console.error("Error deleting the uploaded image:", deleteError);
+			} else {
+				console.log(`Image with at ${uploadedFilePath} deleted successfully`);
+			}
+		}
+	};
+	// Create a project uuid
+	const projectId = uuid();
+
+	const [uploadedFilePaths, setUploadedFilePaths] = useState<string[]>([]);
+	useEffect(() => {
+		if (uploadedImgFiles.length > 0) {
+			for (const file of uploadedImgFiles) {
+				const filePath = `projects/${user.id}/${projectId}/${file.name}`;
+				setUploadedFilePaths([...uploadedFilePaths, filePath]);
+			}
+		}
+	}, [uploadedImgFiles, projectId, user.id, uploadedFilePaths]);
+	// Remove uploaded images from the server when the user exits the page before saving
+	useEffect(() => {
+		const handleBeforeUnload = (event: any) => {
+			event.preventDefault(); // Prevent default confirmation dialog
+			event.returnValue = ""; // Allow page to exit
+
+			removeUploadedImagesOnExit(uploadedFilePaths)
+				.then(() => {
+					console.log("Uploaded images removed successfully");
+				})
+				.finally(() => {
+					window.removeEventListener("beforeunload", handleBeforeUnload);
+				});
+		};
+
+		window.addEventListener("beforeunload", handleBeforeUnload);
+
+		// Cleanup function to remove the event listener
+		return () => {
+			window.removeEventListener("beforeunload", handleBeforeUnload);
+		};
+	}, [uploadedFilePaths]);
+	const supabase_project_bucket_url = process.env.supabase_project_bucket_url;
+	const onUpload = (files: File[]) => {
+		console.log("Files were uploaded: ", files);
+		if (files.length === 1) toast.success(`File uploaded successfully`);
+		else toast.success(`Files uploaded successfully`);
+		setUploadedImgFiles(files);
+		files.map((file, index) => {
+			const path = `/${user.id}/${projectId}/${file.name}`;
+			const url = `${supabase_project_bucket_url}${path}`;
+			console.log("length of images >>> ", images.length);
+			console.log("index >>> ", index);
+			console.log("url >>> ", url);
+			if (images.length === 0) {
+				if (index === 0) {
+					setImages([...images, { url, isBanner: true }]);
+				} else {
+					setImages([...images, { url, isBanner: false }]);
+				}
+			} else {
+				setImages([...images, { url, isBanner: false }]);
+			}
+		});
+	};
+
+	// Note - Might need to update everything to 'watch' for react-hook-form
+	const createProject = async () => {
 		const projectData = {
 			title: formValues.title,
-			imageUrl: bannerUrl,
 			projectCoordinatorContact: {
 				name: formValues.coordinatorName,
 				phone: formValues.coordinatorPhone,
 			},
+			imageUrls: images,
+			videoUrls: videoUrls,
 			description: formValues.description,
 			producerId: producerId,
 			status: "pending_verification",
@@ -296,10 +398,11 @@ function AddProject() {
 			return toast.error("Please enter a valid project area size.");
 
 		await axios
-			.post("/api/projects", { projectData, producerId })
+			.post("/api/projects", { projectData, producerId, projectId })
 			.then((response: any) => {
 				console.log("Project Created: ", response.data);
 				toast.success("Project created successfully!");
+				setLoading({ loading: false, message: "" });
 				router.push("/p/projects");
 			})
 			.catch((error: any) => {
@@ -318,47 +421,16 @@ function AddProject() {
 			setLoading({ loading: false, message: "" });
 			return;
 		}
-		let fileUploadName = fileName;
-		if ((formValues.imageFile as FileList).length > 0) {
-			try {
-				await uploadImage((formValues.imageFile as FileList)[0]);
-			} catch (error) {
-				toast.error(`Error uploading image. ${error}`);
-				console.log("error uploading image: ", error);
-
-				setLoading({ loading: false, message: "" });
-				// Delete the uploaded image if the project update fails
-				if (fileUploadName) {
-					const { error: deleteError } = await supabase.storage
-						.from("projects")
-						.remove([fileUploadName]);
-
-					if (deleteError) {
-						console.error("Error deleting the uploaded image:", deleteError);
-					}
-				}
-				return;
-			} finally {
-				const fileExt = (formValues.imageFile as FileList)[0].name
-					.split(".")
-					.pop();
-
-				if (fileName === "") {
-					fileUploadName = `${Math.random()}.${fileExt}`;
-				}
-				const filePath = `projects/${user.id}/${fileUploadName}`;
-				const { data: publicURL } = supabase.storage
-					.from("projects")
-					.getPublicUrl(filePath);
-				if (!publicURL) {
-					throw new Error("Error uploading image");
-				}
-				if (publicURL.publicUrl) {
-					createProject(publicURL.publicUrl);
-				}
+		try {
+			await createProject();
+		} catch (error) {
+			if (error instanceof Error) {
+				toast.error(`Error adding project: ${error.message}`);
+				console.error("Error adding project:", error);
+			} else {
+				toast.error("An unexpected error occurred during project update.");
+				console.error("Error adding project:", error);
 			}
-		} else if (formValues.imageUrlInput) {
-			createProject(formValues.imageUrlInput);
 		}
 	};
 	const toggleUploadMethod = () => {
@@ -942,44 +1014,56 @@ function AddProject() {
 				<br />
 				{locationType !== "Residential" && (
 					<>
-						<label className='my-4 md:w-[800px]'>
-							<span className=''>Project Banner Image:</span>
-							<div className='flex flex-col'>
-								<button
-									type='button'
-									onClick={toggleUploadMethod}
-									className='text-xs mb-[4px] my-2 text-left mr-2 w-fit bg-[var(--cta-one)] hover:bg-[var(--cta-one-hover)] text-white font-bold p-1 rounded transition-colors cursor-pointer'
-								>
-									{uploadMethod ? (
-										<span className='flex items-center'>
-											<HiSwitchHorizontal className='mr-[4px] text-xl' />
-											Enter URL
-										</span>
-									) : (
-										<span className='flex items-center'>
-											<HiSwitchHorizontal className='mr-[4px] text-xl' />
-											Upload Image
-										</span>
-									)}
-								</button>
-								{uploadMethod ? (
-									<input
-										{...register("imageFile")}
-										type='file'
-										accept='image/png, image/jpeg'
-										className='w-[max-content] border-2 border-gray-300 mt-[2px] rounded-md p-2 cursor-pointer !text-gray-200 tracking-wide file:cursor-pointer file:bg-[var(--cta-one)] file:hover:bg-[var(--cta-one-hover)] file:px-4 file:py-2 file:text-white file:rounded file:font-semibold file:transition-colors'
-									/>
-								) : (
-									<label className='flex flex-col md:w-[800px]'>
-										<span className='mb-[4px] '>Paste direct image URL:</span>
-										<input
-											{...register("imageUrlInput")}
-											type='text'
-											className='border-2 border-gray-300 rounded-md p-2 w-full'
+						<label>
+							<span className='my-4'>Project Videos:</span>
+							<p className='text-sm'>
+								Add urls for videos you want to share with your project from
+								YouTube, Vimeo, Wistia, or Twitch!
+							</p>
+
+							<>
+								{videoUrls?.length > 0 ? (
+									videoUrls?.map((url, index) => (
+										<VideoUploadInput
+											key={index}
+											index={index}
+											removeVideoUrl={removeVideoUrl}
+											register={register}
 										/>
-									</label>
+									))
+								) : (
+									<VideoUploadInput
+										key={0}
+										index={0}
+										removeVideoUrl={removeVideoUrl}
+										register={register}
+									/>
 								)}
-							</div>
+								{videoUrls.length < 9 && (
+									<button
+										type='button'
+										onClick={addVideoUrl}
+										className='mb-4 mt-2 text-left w-fit bg-[var(--cta-one)] hover:bg-[var(--cta-one-hover)] 
+									text-white font-bold py-2 px-4 rounded transition-colors cursor-pointer'
+									>
+										Add another URL
+									</button>
+								)}
+							</>
+						</label>
+						<label className='my-4 md:w-[800px]'>
+							<span className=''>Project Images:</span>
+							{user.id !== "" && (
+								<ImageUpload
+									onUpload={onUpload}
+									removeImageUrl={removeImageUrl}
+									register={register}
+									images={images}
+									setImages={setImages}
+									userId={user?.id!}
+									projectId={projectId}
+								/>
+							)}
 						</label>
 						<br />
 						<label className='flex flex-col md:w-[800px]'>

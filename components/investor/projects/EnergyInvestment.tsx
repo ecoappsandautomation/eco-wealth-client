@@ -18,7 +18,7 @@ export default function EnergyInvestment({ project, sharesRemaining }: Props) {
 	const {
 		title,
 		description,
-		imageUrl,
+		imageUrls,
 		energyProjects,
 		solarProjects,
 		projectFinancials,
@@ -94,7 +94,7 @@ export default function EnergyInvestment({ project, sharesRemaining }: Props) {
 					<InvestmentLeft
 						title={title}
 						description={description}
-						imageUrl={imageUrl}
+						imageUrl={imageUrls[0].url}
 						energyProjectType={energyProjects.type}
 						estInstallationDate={solarProjects?.[0].estInstallationDate}
 						projectLocationType={solarProjects?.[0].locationType}

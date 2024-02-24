@@ -17,7 +17,7 @@ export default function TreeInvestment({ project, sharesRemaining }: Props) {
 	const {
 		title,
 		description,
-		imageUrl,
+		imageUrls,
 		treeProjects,
 		projectFinancials,
 		isNonProfit,
@@ -92,10 +92,10 @@ export default function TreeInvestment({ project, sharesRemaining }: Props) {
 					<TreeInvestmentLeft
 						title={title}
 						description={description}
-						imageUrl={imageUrl}
+						imageUrl={imageUrls[0].url}
 						isNonProfit={isNonProfit}
 						treeProjectType={treeProjects.projectType}
-						estPlantingDate={treeProjects.estPlantingDate}
+						estPlantingDate={treeProjects.estPlantingDate.toString()}
 						estimatedMaturityDate={estimatedMaturityDate}
 					/>
 

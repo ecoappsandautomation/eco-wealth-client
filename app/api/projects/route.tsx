@@ -8,7 +8,7 @@ export async function POST(req: any) {
 	const cookieStore = cookies();
 	const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 	try {
-		const { projectData, producerId } = await req.json();
+		const { projectData, producerId, projectId } = await req.json();
 
 		// Here we check if there is a title, project type, project contact details, agreement accepted, and
 		// address of operation
@@ -85,9 +85,10 @@ export async function POST(req: any) {
 			.from("projects")
 			.insert([
 				{
+					id: projectId,
 					title: projectData.title,
-					banner_url: projectData.bannerUrl,
 					image_urls: projectData.imageUrls,
+					video_urls: projectData.videoUrls,
 					project_coordinator_contact: projectData.projectCoordinatorContact,
 					description: projectData.description,
 					producer_id: producerId,

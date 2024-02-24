@@ -1,5 +1,5 @@
 import React, { useState, useEffect, FC } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import convertToCamelCase from "@/utils/convertToCamelCase";
 import Project from "./producer/projects/Project";
 import InvestButton from "./investor/projects/InvestButton";
@@ -8,9 +8,13 @@ import { useAppSelector } from "@/redux/hooks";
 import Loading from "./Loading";
 import axios from "axios";
 
-type Props = {};
+type Props = {
+	pub?: boolean;
+	refAgreement?: boolean;
+};
 
-const ProjectDetails = ({}: Props) => {
+const ProjectDetails = ({ pub, refAgreement }: Props) => {
+	const router = useRouter();
 	const path: any = useParams();
 	const { id } = path;
 	const [project, setProject] = useState(
@@ -37,10 +41,13 @@ const ProjectDetails = ({}: Props) => {
 	const user = useAppSelector((state: RootState) => state.user);
 	const [showInvestButton, setShowInvestButton] = useState(true);
 	useEffect(() => {
-		if (project.producerId === user.producerId) {
+		if (project.producerId === user.producerId || pub) {
 			setShowInvestButton(false);
 		}
-	}, [user, project]);
+	}, [user, project, pub]);
+	const handleSignupClick = () => {
+		router.push("/signup");
+	};
 	// Render the project details or a loading message if the data is not yet available
 	return (
 		<div className='mt-4 h-[1000px]'>
@@ -51,10 +58,11 @@ const ProjectDetails = ({}: Props) => {
 							adminMode={false}
 							project={project}
 							percentageFunded={percentageFunded}
+							pub={pub}
 						/>
 					</div>
-					{showInvestButton && project.id && (
-						<div className='max-sm:w-[max-content] w-full xl:w-[max-content] mb-4 mx-auto flex flex-col items-center border-green-400 border-[1px] border-opacity-20 h-min  transition-all p-6 rounded-md xl:ml-8 md:sticky md:top-28'>
+					{project.id && (
+						<div className='max-sm:w-[max-content] w-full xl:w-[max-content] mb-4 mx-auto flex flex-col items-center border-green-400 border-[1px] border-opacity-20 h-min  transition-all p-6 rounded-md xl:ml-8 md:sticky xl:top-28'>
 							{uniqueInvestors && uniqueInvestors === 1 ? (
 								<p className='mb-4 text-sm'>
 									<span className='font-bold'>{uniqueInvestors} investor</span>{" "}
@@ -66,7 +74,20 @@ const ProjectDetails = ({}: Props) => {
 									have backed this project.
 								</p>
 							)}
-							<InvestButton id={project.id} />
+							{showInvestButton && <InvestButton id={project.id} />}
+							{pub && (
+								<div className='text-center'>
+									<p className='text-sm text-center mb-2'>
+										Want to back this project or find more like this one?
+									</p>
+									<button
+										className='py-2 px-6 rounded bg-[var(--cta-one)] text-white font-bold transition-all hover:bg-[var(--cta-one-hover)] hover:scale-105'
+										onClick={handleSignupClick}
+									>
+										Create an account today
+									</button>
+								</div>
+							)}
 						</div>
 					)}
 				</div>

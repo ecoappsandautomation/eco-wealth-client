@@ -17,11 +17,15 @@ import { Box, LinearProgress, useMediaQuery } from "@mui/material";
 import { RootState } from "@/redux/store";
 import { FaAngleDown } from "react-icons/fa";
 import axios from "axios";
+import ProjectImageDisplay from "@/components/ProjectImageDisplay";
+import ProjectVideoDisplay from "@/components/ProjectVideoDisplay";
+import ReferralShareLink from "@/components/referral/projects/ReferralShareLink";
 type Props = {
 	project: Project | null | undefined;
 	fetchProject?: () => void;
 	adminMode: boolean;
 	percentageFunded?: number;
+	pub?: boolean;
 };
 
 export default function Project({
@@ -29,10 +33,12 @@ export default function Project({
 	fetchProject,
 	adminMode,
 	percentageFunded,
+	pub,
 }: Props) {
 	// Visibility Menu
 	const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 	const open = Boolean(anchorEl);
+	const user = useAppSelector((state: RootState) => state.user);
 	const router = useRouter();
 	const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
 		setAnchorEl(event.currentTarget);
@@ -40,13 +46,14 @@ export default function Project({
 	const handleClose = () => {
 		setAnchorEl(null);
 	};
-	const matches = useMediaQuery("(min-width: 768px)");
+
 	const role = useAppSelector((state: RootState) => state.user?.activeRole);
 	const theme = useAppSelector((state: RootState) => state.user?.currentTheme);
 	const [openModal, setOpenModal] = useState(false);
 	const handleOpenModal = () => setOpenModal(true);
 	const handleCloseModal = () => setOpenModal(false);
-
+	const [bannerImage, setBannerImage] = useState("");
+	const [images, setImages] = useState<ImageUrls>([]);
 	const style = {
 		position: "absolute" as "absolute",
 		top: "50%",
@@ -140,6 +147,21 @@ export default function Project({
 	const handleGoBack = () => {
 		router.back();
 	};
+
+	useEffect(() => {
+		if (!project) return;
+		console.log("projects >>> ", project);
+		if (project?.imageUrls) {
+			// loop through all the images and check for isBanner === true and setBanner to the url of the selected image and add the rest of the images to images
+			project.imageUrls.map(({ url, isBanner }) => {
+				if (isBanner) {
+					setBannerImage(url);
+				} else {
+					setImages((prev) => [...prev, { url, isBanner }]);
+				}
+			});
+		}
+	}, [project]);
 	return (
 		<div>
 			<div className='flex items-center justify-between'>
@@ -205,29 +227,10 @@ export default function Project({
 					</div>
 				)}
 			</div>
-			{matches ? (
-				<Image
-					className='w-full h-64 object-cover object-top mb-4 rounded-xl'
-					src={
-						project?.imageUrl
-							? project?.imageUrl
-							: "https://via.placeholder.com/1500x500"
-					}
-					alt='Banner'
-					width={1500}
-					height={500}
-				/>
-			) : (
-				<Image
-					src={
-						project?.imageUrl
-							? project?.imageUrl
-							: "https://via.placeholder.com/1500x500"
-					}
-					alt='Banner'
-					width={288}
-					height={150}
-					className='w-full h-48 object-cover rounded-2xl relative'
+			{project && (
+				<ProjectImageDisplay
+					bannerImage={bannerImage}
+					images={project?.imageUrls}
 				/>
 			)}
 			{percentageFunded && percentageFunded >= 0 ? (
@@ -342,6 +345,7 @@ export default function Project({
 				)}
 			</div>
 			<hr className='dark:border-gray-700 my-3' />
+			{project && <ProjectVideoDisplay videos={project?.videoUrls} />}
 			<div className='flex flex-col md:flex-row justify-between'>
 				<div className='mb-4 md:mb-0'>
 					<p className='mb-2'>
@@ -395,6 +399,7 @@ export default function Project({
 				project={project}
 				adminMode={adminMode}
 			/>
+			{user.id && user.refAgreement && <ReferralShareLink />}
 		</div>
 	);
 }

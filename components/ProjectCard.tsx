@@ -41,7 +41,7 @@ const ProjectCard = ({
 	const {
 		title,
 		description,
-		bannerUrl,
+		imageUrls,
 		id,
 		status,
 		type,
@@ -52,10 +52,9 @@ const ProjectCard = ({
 		energyProjects,
 		treeProjects,
 		projectFinancials,
+		externalUrl,
 	} = project;
 	const projectId = id;
-	// const [isFavorited, setIsFavorited] = useState(false);
-	// const [isFavIconHovered, setIsFavIconHovered] = useState(false);
 
 	const [menuOpen, setMenuOpen] = useState(false);
 	const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -71,6 +70,88 @@ const ProjectCard = ({
 
 	const user = useAppSelector((state) => state.user);
 
+	// Opens the edit project page
+	const handleEdit = () => {
+		// Navigate to the edit project page
+		router.push(`/p/projects/${projectId}/edit`);
+	};
+
+	const userName = user?.name;
+	// Publishes the project with the given ID
+	const publishProject = async (projectId: string) => {
+		if (!isVerified) return;
+		if (!fetchProjects) return;
+		try {
+			axios
+				.put(`/api/projects/publish`, {
+					status,
+					projectId,
+				})
+				.then(() => {
+					fetchProjects();
+					toast.success("Project published successfully");
+				});
+		} catch (error: any) {
+			// Handle the error appropriately
+			console.error("Error publishing project:", error.message);
+			toast.error(`Failed to publish the project ${error.message}`);
+		}
+	};
+
+	// Initiates the publish project flow
+	const handlePublish = async () => {
+		if (!projectId) return;
+		await publishProject(projectId);
+		setMenuOpen(false);
+		toast.info("Publishing Project...");
+	};
+
+	const handleViewProjectClick = () => {
+		if (role === "investor") router.push(`/i/projects/${projectId}`);
+		if (role === "owner") router.push(`/p/projects/${projectId}`);
+	};
+
+	const theme = useAppSelector((state) => state.user?.currentTheme);
+
+	const handleKnowMoreClick = () => router.push(`/i/projects/${projectId}`);
+	const handleInvestClick = () => {
+		if (externalUrl) {
+			return router.push(externalUrl);
+		} else {
+			router.push(`/i/projects/${projectId}/invest`);
+		}
+	};
+
+	const [requestedDollarsPerKwh, setRequestedDollarsPerKwh] = useState(0);
+
+	// Set the card banner image
+	const [bannerUrl, setBannerUrl] = useState("");
+	useEffect(() => {
+		// look through imageUrls and find the one with isBanner = true and run setBannerUrl to set it to that image
+		if (!imageUrls) return;
+		let bannerFound = false;
+		imageUrls?.forEach((image) => {
+			console.log("image", image);
+			if (image.isBanner) {
+				setBannerUrl(image.url);
+				bannerFound = true;
+			}
+		});
+		// If no banner is found, set the banner to the first image in the array
+		if (!bannerFound && imageUrls.length > 0) {
+			setBannerUrl(imageUrls[0].url);
+		}
+	}, [imageUrls]);
+
+	// TODO:
+	// Future features for reporting & bookmarking projects
+	//
+	//
+	// const [isFavorited, setIsFavorited] = useState(false);
+	// const [isFavIconHovered, setIsFavIconHovered] = useState(false);
+	// const handleReport = async () => {};
+	// const handleOnMouseEnter = () => setIsFavIconHovered(true);
+	// const handleOnMouseLeave = () => setIsFavIconHovered(false);
 	// Toggles the favorite status of the project
 	// const toggleFavorite = async (event: React.MouseEvent) => {
 	// 	event.stopPropagation();
@@ -124,59 +205,7 @@ const ProjectCard = ({
 	// 	checkFavorite();
 	// }, [projectId, user.id]);
 
-	// Opens the edit project page
-	const handleEdit = () => {
-		// Navigate to the edit project page
-		router.push(`/p/projects/${projectId}/edit`);
-	};
-
-	const userName = user?.name;
-	// Publishes the project with the given ID
-	const publishProject = async (projectId: string) => {
-		if (!isVerified) return;
-		if (!fetchProjects) return;
-		try {
-			axios
-				.put(`/api/projects/publish`, {
-					status,
-					projectId,
-				})
-				.then(() => {
-					fetchProjects();
-					toast.success("Project published successfully");
-				});
-		} catch (error: any) {
-			// Handle the error appropriately
-			console.error("Error publishing project:", error.message);
-			toast.error(`Failed to publish the project ${error.message}`);
-		}
-	};
-
-	// Initiates the publish project flow
-	const handlePublish = async () => {
-		if (!projectId) return;
-		await publishProject(projectId);
-		setMenuOpen(false);
-		toast.info("Publishing Project...");
-	};
-
-	const handleViewProjectClick = () => {
-		if (role === "investor") router.push(`/i/projects/${projectId}`);
-		if (role === "owner") router.push(`/p/projects/${projectId}`);
-	};
-
-	const theme = useAppSelector((state) => state.user?.currentTheme);
-
-	const handleKnowMoreClick = () => router.push(`/i/projects/${projectId}`);
-	const handleInvestClick = () =>
-		router.push(`/i/projects/${projectId}/invest`);
-
-	const [requestedDollarsPerKwh, setRequestedDollarsPerKwh] = useState(0);
-	// Initiates the report project flow
-
-	// const handleReport = async () => {};
-	// const handleOnMouseEnter = () => setIsFavIconHovered(true);
-	// const handleOnMouseLeave = () => setIsFavIconHovered(false);
+	// role and status handling to only render published projects
 	if (role === "investor" && status === "pending_verification") return null;
 	if (role === "investor" && status === "pending_reverification") return null;
 	if (role === "investor" && status === "not_approved") return null;

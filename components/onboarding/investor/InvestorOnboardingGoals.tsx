@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import SkipOnboardingButton from "./SkipOnboardingButton";
 
 type Props = {
 	investmentGoals: string[];
@@ -12,6 +13,7 @@ type Props = {
 	preferredTreeTypes: string[];
 	handleTreeTypeChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 	handleNextStep: () => void;
+	handleSkipOnboarding: (e: React.MouseEvent) => void;
 };
 
 export default function InvestorOnboardingGoals({
@@ -26,6 +28,7 @@ export default function InvestorOnboardingGoals({
 	preferredTreeTypes,
 	handleTreeTypeChange,
 	handleNextStep,
+	handleSkipOnboarding,
 }: Props) {
 	const [disableNextStep, setDisableNextStep] = useState(true);
 	useEffect(() => {
@@ -370,6 +373,7 @@ export default function InvestorOnboardingGoals({
 			) : null}
 
 			<div className='flex justify-end'>
+				<SkipOnboardingButton handleSkipOnboarding={handleSkipOnboarding} />
 				<button
 					type='button'
 					onClick={handleNextStep}

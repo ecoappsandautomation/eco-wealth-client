@@ -6,8 +6,6 @@ type Props = {
 
 export default function EnergyProject({ project }: Props) {
 	const { entireProject, energyProjects, solarProjects } = project;
-	console.log("project", project);
-	console.log("solar projects", solarProjects);
 	return (
 		<div>
 			{solarProjects?.[0]?.locationType && (

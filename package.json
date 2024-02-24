@@ -46,6 +46,7 @@
     "react-google-recaptcha-v3": "^1.10.1",
     "react-hook-form": "^7.45.0",
     "react-icons": "^4.9.0",
+    "react-player": "^2.14.1",
     "react-quill": "^2.0.0",
     "react-redux": "^8.0.7",
     "react-select": "^5.7.3",
