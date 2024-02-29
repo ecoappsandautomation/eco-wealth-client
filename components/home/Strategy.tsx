@@ -11,56 +11,56 @@ export default function Strategy({}: Props) {
 				"Prototype built and released for testing, demonstration, and feedback.",
 			date: "January 2024",
 			currentMilestone: true,
-			position: 40, // Adjusted position
+			position: 40,
 		},
 		{
 			name: "2 - Pre-seed Funding",
 			description:
 				"Pre-seed investment round with accredited investors and assembly of board of advisors.",
 			date: "TBD - 2024",
-			position: 70, // Adjusted position
+			position: 70,
 		},
 		{
 			name: "3 - Key Team Hiring",
 			description:
 				"Hire developers, designers, securities lawyers, financial analysts, advisors and support representatives to build the team.",
 			date: "TBD - 2024",
-			position: 100, // Adjusted position
+			position: 100,
 		},
 		{
 			name: "4 - Compliance Refactoring & Merchant Fee Reduction",
 			description:
 				"Refactor app with financial security regulatory compliance regulations, and reduce merchant transaction fees.",
 			date: "TBD - 2024",
-			position: 130, // Adjusted position
+			position: 130,
 		},
 		{
 			name: "4 - Tree and Solar Producers Onboarding",
 			description:
 				"Onboard tree and solar project producers and optimize business operations.",
 			date: "TBD - 2024",
-			position: 160, // Adjusted position
+			position: 160,
 		},
 		{
 			name: "5 - Launch Referral Program",
 			description:
 				"Officially open up ambassador program to compensate referral ambassadors when successfully inviting new investors to participate in funding projects.",
 			date: "TBD - 2024",
-			position: 180, // Adjusted position
+			position: 180,
 		},
 		{
 			name: "6 - Launch Education Center",
 			description:
 				"Onboard experts from finance, agriculture, and renewable energy & produce educational content for everyone for free.",
 			date: "TBD - 2024",
-			position: 210, // Adjusted position
+			position: 210,
 		},
 		{
 			name: "7 - Fund & Launch Initial Projects",
 			description:
 				"Together with industry experts, producers, and investors, fund & launch the initial tree and solar projects in North America.",
 			date: "TBD - 2024",
-			position: 250, // Adjusted position
+			position: 250,
 		},
 		// Add more milestones as needed
 	];

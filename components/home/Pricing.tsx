@@ -77,7 +77,7 @@ export default function Pricing({ handleWaitingListClick }: Props) {
 		{
 			title: "Eco Wealth Equity",
 			subtitle: "(Accredited Investors)",
-			price: "$10/share",
+			price: "$1/share",
 			features: [
 				"1,000,000 Shares for 10% Stake Available",
 				"Founder Profile Badge",
