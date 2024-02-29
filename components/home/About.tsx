@@ -4,11 +4,11 @@ type Props = {};
 
 export default function About({}: Props) {
 	return (
-		<div>
-			<div
-				id='about'
-				className='py-[100px] px-[64px]'
-			>
+		<div
+			id='about'
+			className='anchor'
+		>
+			<div className='py-[100px] px-[64px]'>
 				<h3 className='text-3xl font-bold'>
 					The Vision: Create a Greener Tomorrow, Today.
 				</h3>

@@ -184,3 +184,6 @@ body {
 }
 
 
+.anchor {
+  scroll-margin-top: calc(9vh + 2.5em);
+}

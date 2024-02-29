@@ -4,16 +4,16 @@ type Props = {};
 
 export default function HowItWorks({}: Props) {
 	return (
-		<>
+		<div
+			id='how-it-works'
+			className='anchor'
+		>
 			<hr className='border-green-900' />
-			<div
-				id='how-it-works'
-				className='py-[100px] px-[64px]'
-			>
+			<div className='py-[100px] px-[64px]'>
 				<h1 className='text-3xl font-bold'>
 					How Eco Wealth Works: A Simple Path to Green Investing
 				</h1>
-				<div className='mt-8'>
+				<div className='mt-16'>
 					<div className='[&>*:nth-child(1)]:hover:text-[var(--h-one)] flex flex-col md:flex-row mt-4 md:items-center hover:scale-110 transition-all text-gray-400 hover:!text-white mb-16'>
 						<span className='flex-1 mb-2 md:mb-0 text-2xl md:text-4xl font-bold mr-2 text-gray-200'>
 							Sign Up and Explore
@@ -67,6 +67,6 @@ export default function HowItWorks({}: Props) {
 					</div>
 				</div>
 			</div>
-		</>
+		</div>
 	);
 }

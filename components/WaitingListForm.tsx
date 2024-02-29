@@ -5,11 +5,17 @@ import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import { BiLock } from "react-icons/bi";
 import Logo from "./Logo";
-import handleReferralId from "@/utils/handleReferralId";
+
 import ReCAPTCHA from "react-google-recaptcha";
 import validator from "validator";
-import DOMPurify from "dompurify";
-function WaitingListForm() {
+import addToWaitingList from "@/utils/addToWaitingList";
+import CheckReferral from "./home/CheckReferral";
+import handleReferralId from "@/utils/handleReferralId";
+type Props = {
+	formHeight?: string;
+	showLogo?: boolean;
+};
+function WaitingListForm({ formHeight, showLogo = true }: Props) {
 	const [name, setName] = useState("");
 	const [email, setEmail] = useState("");
 	const [emailError, setEmailError] = useState("");
@@ -126,67 +132,35 @@ function WaitingListForm() {
 		const referralId = getReferralId();
 		if (!name || !email || !captcha) return;
 		// Send form data to the server
-		const sanitizedName = DOMPurify.sanitize(name);
-		const sanitizedEmail = DOMPurify.sanitize(email);
-		const sanitizedReferralSource = DOMPurify.sanitize(referralSource);
-		const sanitizedReferrer = DOMPurify.sanitize(referrer);
-		const sanitizedSpecificReferral = DOMPurify.sanitize(specificReferral);
+
 		if (!referralId) {
 			// Send form data to the server
 			if (referralSource !== "") {
-				axios
-					.post("/api/waiting_list", {
-						name: sanitizedName,
-						email: sanitizedEmail,
-						referralSource: sanitizedReferralSource,
-						specificReferral:
-							sanitizedReferrer !== ""
-								? sanitizedReferrer
-								: sanitizedSpecificReferral,
-					})
-					.then((res) => {
-						router.push(
-							`/thank-you-for-registering?name=${sanitizedName}&email=${sanitizedEmail}`
-						);
-					})
-					.catch((err) => {
-						console.log("/api/waiting_list >> err", err);
-					});
+				addToWaitingList({
+					name,
+					email,
+					referralSource,
+					referrer,
+					specificReferral: referrer !== "" ? referrer : specificReferral,
+					router,
+				});
 			} else {
-				axios
-					.post("/api/waiting_list", {
-						name: sanitizedName,
-						email: sanitizedEmail,
-					})
-					.then((res) => {
-						router.push(
-							`/thank-you-for-registering?name=${sanitizedName}&email=${sanitizedEmail}`
-						);
-					})
-					.catch((err) => {
-						console.log("/api/waiting_list >> err", err);
-					});
+				addToWaitingList({
+					name,
+					email,
+					router,
+				});
 			}
 		} else {
-			axios
-				.post("/api/waiting_list", {
-					name: sanitizedName,
-					email: sanitizedEmail,
-					referralSource: sanitizedReferralSource,
-					referrer: referralId,
-					specificReferral:
-						sanitizedReferrer !== ""
-							? sanitizedReferrer
-							: sanitizedSpecificReferral,
-				})
-				.then((res) => {
-					router.push(
-						`/thank-you-for-registering?name=${sanitizedName}&email=${sanitizedEmail}`
-					);
-				})
-				.catch((err) => {
-					console.log("/api/waiting_list >> err", err);
-				});
+			addToWaitingList({
+				name,
+				email,
+				referralSource,
+				referrer,
+				specificReferral,
+				referralId,
+				router,
+			});
 		}
 	};
 
@@ -204,12 +178,17 @@ function WaitingListForm() {
 	return (
 		<form
 			onSubmit={handleSubmit}
-			className='flex flex-col items-center justify-center min-h-screen'
+			className={`flex flex-col items-center justify-center ${
+				formHeight || "min-h-screen"
+			}`}
 		>
-			<Logo
-				width={384}
-				height={150}
-			/>
+			{/* showLogo - default is true */}
+			{showLogo && (
+				<Logo
+					width={384}
+					height={150}
+				/>
+			)}
 			<h2 className='mb-12 lg:text-xl text-gray-400 text-center'>
 				Be the first to know when Eco Wealth launches!
 			</h2>

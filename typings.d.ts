@@ -347,3 +347,12 @@ interface TreeProject extends Project {
 }
 
 type Projects = Project[];
+
+interface PinnedQuestion {
+	question: string;
+	fullName: string;
+	email: string;
+	answered: boolean;
+	answer: string;
+	dateAdded?: string;
+}

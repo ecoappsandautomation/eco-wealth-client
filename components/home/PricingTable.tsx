@@ -26,7 +26,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ plans }) => {
 			<div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4'>
 				{plans.map((plan, index) => (
 					<div key={index}>
-						<div className='bg-white text-gray-500 rounded-lg shadow-md p-6 hover:shadow-lg hover:shadow-green-700 transition-all hover:scale-105 [&>*:nth-child(3)]:hover:text-[var(--cta-one)] [&>*:nth-child(2)]:hover:text-[var(--cta-one)] [&>*:nth-child(1)]:hover:text-[var(--cta-one)]'>
+						<div className='bg-gradient-to-r from-[#000308] to-[#0C2100] hover:border-green-400 border-gray-700 border-[2px] text-gray-200 rounded-lg shadow-md p-6 hover:shadow-lg hover:shadow-green-700 transition-all hover:scale-105 [&>*:nth-child(3)]:hover:text-green-400 [&>*:nth-child(2)]:hover:text-green-400 [&>*:nth-child(1)]:hover:text-green-400'>
 							<h2 className='text-lg font-semibold'>{plan.title}</h2>
 							<h3 className='font-semibold mb-4'>{plan.subtitle}</h3>
 							<p className='text-2xl font-bold mb-4'>{plan.price}</p>
@@ -36,11 +36,11 @@ const PricingTable: React.FC<PricingTableProps> = ({ plans }) => {
 									<React.Fragment key={i}>
 										{typeof feature === "string" ? (
 											<li className='flex items-center mb-2'>
-												<BiCheckCircle className='text-[var(--cta-one)] m-2 text-lg flex-[0.2]' />
+												<BiCheckCircle className='text-green-400 m-2 text-lg flex-[0.2]' />
 												<span className='flex-1'>{feature}</span>
 											</li>
 										) : (
-											<h3 className='text-[var(--cta-one)] font-semibold mt-4 mb-2'>
+											<h3 className='text-green-400 font-semibold mt-4 mb-2'>
 												{feature.subtitle}
 											</h3>
 										)}
@@ -59,7 +59,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ plans }) => {
 								{plan.externalCtaText}
 								{plan.externalCtaLink && plan.externalCta && (
 									<Link
-										className='ml-[2px] text-[var(--cta-two-hover)] hover:text-[var(--cta-one)] transition-colors'
+										className='ml-[2px] text-[var(--cta-two-hover)] hover:text-green-300 transition-colors'
 										href={plan.externalCtaLink}
 									>
 										{plan.externalCta}

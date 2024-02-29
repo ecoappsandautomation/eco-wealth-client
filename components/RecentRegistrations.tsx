@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import moment from "moment";
 import { BsCheckCircleFill } from "react-icons/bs";
 import { FaFileSignature } from "react-icons/fa";
+import FullNameToFirstNameSplit from "@/utils/FullNameToFirstNameSplit";
 
 export default function RecentRegistrations() {
 	const [registrations, setRegistrations] = useState<any>([]);
@@ -24,13 +25,8 @@ export default function RecentRegistrations() {
 						<div className='flex items-center'>
 							<FaFileSignature className='mr-[8px] text-[#07bc0c] text-xl' />{" "}
 							<div>
-								{name && name?.split(" ").length > 1
-									? `${name?.split(" ")[0]} ${name
-											?.split(" ")
-											?.pop()?.[0]
-											?.toUpperCase()}.`
-									: name}{" "}
-								registered {moment(registrations[index].created_at).fromNow()}{" "}
+								{FullNameToFirstNameSplit(name)} registered{" "}
+								{moment(registrations[index].created_at).fromNow()}{" "}
 								<span className='text-[#07bc0c] flex items-center font-bold text-xs'>
 									<BsCheckCircleFill className='mr-[2px]' /> Verifed Email
 								</span>
