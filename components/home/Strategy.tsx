@@ -1,5 +1,6 @@
 import React from "react";
 import Roadmap from "./Roadmap";
+import JoinWaitlistButton from "./JoinWaitlistButton";
 
 type Props = {};
 
@@ -133,6 +134,9 @@ export default function Strategy({}: Props) {
 							produce and energy, expanding our reach and impact.
 						</div>
 					</div>
+				</div>
+				<div className='flex justify-center'>
+					<JoinWaitlistButton />
 				</div>
 			</div>
 		</div>

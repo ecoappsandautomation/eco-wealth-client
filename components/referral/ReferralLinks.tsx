@@ -1,3 +1,4 @@
+import copyToClipboard from "@/utils/copyToClipboard";
 import React from "react";
 import { toast } from "react-toastify";
 
@@ -10,20 +11,6 @@ const ReferralLinks = ({ referralId }: Props) => {
 	const homePageReferralLink = `https://ecowealth.app/?r=${referralId}`;
 	const waitingListReferralLink = `https://ecowealth.app/register?r=${referralId}`;
 	const referralLink = `?r=${referralId}`;
-	// Copy referral link to clipboard
-	const copyToClipboard = (link: string) => {
-		navigator.clipboard
-			.writeText(link)
-			.then(() => {
-				// Display a success message or toast notification
-				console.log("Referral link copied to clipboard!");
-				toast.success("Referral link copied to clipboard!");
-			})
-			.catch((err) => {
-				// Handle errors
-				console.error("Failed to copy: ", err);
-			});
-	};
 
 	return (
 		<div className='mt-4'>
@@ -40,7 +27,7 @@ const ReferralLinks = ({ referralId }: Props) => {
 					</p>
 					<button
 						onClick={() => copyToClipboard(homePageReferralLink)}
-						className='flex mr-2 text-sm md:text-base items-center bg-[var(--cta-one)] hover:bg-[var(--cta-one-hover)] text-white font-bold py-2 px-4 rounded transition-colors cursor-pointer'
+						className='flex mr-2 text-sm md:text-base items-center bg-[var(--cta-one)] hover:bg-[var(--cta-one-hover)] text-white font-bold py-2 px-4 rounded-md transition-colors cursor-pointer'
 					>
 						Copy link
 					</button>
@@ -57,7 +44,7 @@ const ReferralLinks = ({ referralId }: Props) => {
 					</p>
 					<button
 						onClick={() => copyToClipboard(waitingListReferralLink)}
-						className='flex mr-2 text-sm md:text-base items-center bg-[var(--cta-one)] hover:bg-[var(--cta-one-hover)] text-white font-bold py-2 px-4 rounded transition-colors cursor-pointer'
+						className='flex mr-2 text-sm md:text-base items-center bg-[var(--cta-one)] hover:bg-[var(--cta-one-hover)] text-white font-bold py-2 px-4 rounded-md transition-colors cursor-pointer'
 					>
 						Copy link
 					</button>
@@ -82,7 +69,7 @@ const ReferralLinks = ({ referralId }: Props) => {
 					</p>
 					<button
 						onClick={() => copyToClipboard(referralLink)}
-						className='flex mr-2 text-sm md:text-base items-center bg-[var(--cta-one)] hover:bg-[var(--cta-one-hover)] text-white font-bold py-2 px-4 rounded transition-colors cursor-pointer'
+						className='flex mr-2 text-sm md:text-base items-center bg-[var(--cta-one)] hover:bg-[var(--cta-one-hover)] text-white font-bold py-2 px-4 rounded-md transition-colors cursor-pointer'
 					>
 						Copy link
 					</button>

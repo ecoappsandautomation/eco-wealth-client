@@ -88,18 +88,13 @@ export async function POST(req: NextRequest, res: NextResponse) {
 	const msg = {
 		to: email,
 		from: { email: "info@ecowealth.app", name: "Eco Wealth Notifications" },
-		subject: `[Action Required] 📝 ${firstName}, verify your email to join Eco Wealth's waiting list now!`,
+		subject: `Thank you for registering ${firstName}, please verify your email to join Eco Wealth's waiting list now!`,
 		html: `<div style="color:#444444; line-height:20px; padding:16px 16px 16px 16px; text-align:Left;">
         <a href="https://ecowealth.app/"><img src="https://i.postimg.cc/906kN7K3/logo-transparent-background.png" alt="" width="300"/></a><br/>
 		<h1>Thank you for registering for Eco Wealth's Waiting List, ${firstName}!</h1>
-		
-		<p style="font-size:14px">To secure your spot, please verify your email now by clicking on this link now: <br/><a href="${BASE_URL}/verify?token=${token}">${BASE_URL}/verify</a></p>
-		<p style="font-size:14px; padding:16px 8px; background:#eee; border-radius:4px;">Or copy this link and paste it in your browser: <br/>${BASE_URL}/verify?token=${token}</p>
-		<p style="font-size:14px;"><b>You've made a wise, sustainable decision.</b></p>
-		<p style="font-size:14px">Your commitment to creating a brighter, eco-conscious future shows, and we're excited to have you a part of the community!</p>
-		<p style="font-size:14px">If you have any questions, please feel free to reply back to this email with your questions.</p>
+		<p style="font-size:14px">Please confirm your email to verify your registration: <br/><a href="${BASE_URL}/verify?token=${token}"><button style="background:#40821A; color:white; font-weight:bold; border:none; padding:16px 32px; border-radius:8px; font-size:16px; margin-top:4px;">Confirm email address</button></a></p>
 		<p style="font-size:14px">Thank you again ${firstName}, and have a wonderful day!</p>
-		<p style="font-size:14px">— Eco Wealth</p>
+		<p style="font-size:14px">— Eco Wealth Team</p>
 		<br/>
 		<p style="font-size:12px; color: #777"><b>Note:</b> If this wasn't you, please let us know by replying back to this email and we'll remove you from the list.</p>
       </div>`,

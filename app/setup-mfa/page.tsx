@@ -94,7 +94,7 @@ function SetupMfa({}: Props) {
 				Multi-Factor Authentication
 			</h3>
 			<p className='text-sm text-center mb-8 opacity-90'>
-				Please setup mult-factor authentication with an
+				Please setup multi-factor authentication with an
 				<br /> authenticator app to secure & access your account.
 			</p>
 			<EnrollMFA

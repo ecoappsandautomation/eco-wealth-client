@@ -23,16 +23,16 @@ export default function ThankYouForRegistering({}: Props) {
 				className='cursor-pointer'
 			/>
 			<h1 className='text-3xl font-bold mb-4'>
-				Thank you for registering for the waiting list
+				Thank you for registering
 				{params
 					? `, ${params
 							?.get("name")
 							?.substring(0, params?.get("name")?.indexOf(" "))}! 🎉`
 					: "! 🎉"}
 			</h1>
-			<p>
-				We will send you an email to confirm your registration and secure your
-				spot.
+			<p className='text-lg font-semibold'>
+				Please check your inbox, an email with confirmation instructions was
+				sent to your email address.
 			</p>
 		</div>
 	);

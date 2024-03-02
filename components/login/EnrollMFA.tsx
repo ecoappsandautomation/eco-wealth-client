@@ -1,6 +1,7 @@
 "use client";
 import { useAppSelector } from "@/redux/hooks";
 import { RootState } from "@/redux/store";
+import copyToClipboard from "@/utils/copyToClipboard";
 import { supabaseClient as supabase } from "@/utils/supabaseClient";
 import axios from "axios";
 import { usePathname, useRouter } from "next/navigation";
@@ -147,7 +148,20 @@ function EnrollMFA({
 					<p className='text-sm'>
 						Or you can copy this token into your authententicator app:
 					</p>
-					<p>{factorId}</p>
+					<div className='flex items-center'>
+						<p
+							onClick={() => copyToClipboard(factorId)}
+							className='cursor-pointer mr-2 border-gray-400 border-2 p-2 rounded-md w-[max-content] hover:text-[var(--cta-one)] transition-colors'
+						>
+							{factorId}
+						</p>
+						<button
+							onClick={() => copyToClipboard(factorId)}
+							className='flex mr-2 text-sm md:text-base items-center border-2 border-[var(--cta-one)] hover:border-[var(--cta-one-hover)] text-white font-bold py-2 px-4 rounded-md transition-colors cursor-pointer'
+						>
+							Copy token
+						</button>
+					</div>
 				</div>
 			</div>
 		</>
